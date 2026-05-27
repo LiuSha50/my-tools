@@ -5,7 +5,14 @@ export default {
   icon: '⏱',
   description: '时间戳与日期时间互转',
   layout: 'horizontal',
-  options: [],
+  options: [
+    {
+      key: 'datetime',
+      label: '日期时间',
+      type: 'datetime-local',
+      default: () => getCurrentDatetimeLocal()
+    }
+  ],
   buttons: [
     { mode: 'to-date', label: '时间戳 → 日期' },
     { mode: 'to-timestamp', label: '日期 → 时间戳' },
@@ -20,9 +27,8 @@ export default {
       }
     }
 
-    if (!input) throw new Error('请输入内容')
-
     if (mode === 'to-date') {
+      if (!input) throw new Error('请输入时间戳')
       let num = parseInt(input.trim(), 10)
       if (isNaN(num)) throw new Error('请输入有效的数字时间戳')
       if (num < 1e12) num *= 1000
@@ -34,15 +40,27 @@ export default {
     }
 
     if (mode === 'to-timestamp') {
-      const date = new Date(input.trim())
-      if (isNaN(date.getTime())) throw new Error('请输入有效的日期时间格式')
+      const dtValue = options.datetime
+      if (!dtValue) throw new Error('请选择日期时间')
+      const date = new Date(dtValue)
+      if (isNaN(date.getTime())) throw new Error('无效的日期时间')
       return {
-        result: `时间戳(秒): ${Math.floor(date.getTime() / 1000)}\n时间戳(毫秒): ${date.getTime()}\nISO 格式: ${date.toISOString()}`
+        result: `时间戳(秒): ${Math.floor(date.getTime() / 1000)}\n时间戳(毫秒): ${date.getTime()}\n本地时间: ${formatDate(date)}\nISO 格式: ${date.toISOString()}`
       }
     }
 
     throw new Error(`未知模式: ${mode}`)
   }
+}
+
+function getCurrentDatetimeLocal() {
+  const now = new Date()
+  return formatDateForInput(now)
+}
+
+function formatDateForInput(date) {
+  const pad = n => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
 function formatDate(date) {

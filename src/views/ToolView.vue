@@ -30,6 +30,14 @@
           class="option-input"
           :placeholder="opt.placeholder || ''"
         />
+
+        <input
+          v-else-if="opt.type === 'datetime-local'"
+          v-model="optionValues[opt.key]"
+          type="datetime-local"
+          class="option-input"
+          step="1"
+        />
       </div>
     </div>
 
@@ -88,7 +96,11 @@ watch(tool, (newTool) => {
     const defaults = {}
     if (newTool.options) {
       newTool.options.forEach(opt => {
-        defaults[opt.key] = opt.default !== undefined ? opt.default : ''
+        if (opt.default !== undefined) {
+          defaults[opt.key] = typeof opt.default === 'function' ? opt.default() : opt.default
+        } else {
+          defaults[opt.key] = ''
+        }
       })
     }
     optionValues.value = defaults
