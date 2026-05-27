@@ -1,0 +1,85 @@
+<h2>你更偏好哪种视觉风格？</h2>
+<p class="subtitle">整体色调和氛围的选择</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>极简白净</h3>
+      <p>大面积留白，浅灰背景，细线条，像 Apple 官网那种干净感。</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="padding: 12px; background: #fafafa;">
+          <div style="text-align: center; margin-bottom: 10px; font-size: 14px; font-weight: 300; color: #333; letter-spacing: 2px;">DevTools</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <div style="background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px 8px; text-align: center;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #f5f5f5; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #888;">🔐</div>
+              <div style="font-size: 10px; color: #333; font-weight: 500;">AES</div>
+            </div>
+            <div style="background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px 8px; text-align: center;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #f5f5f5; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #888;">#</div>
+              <div style="font-size: 10px; color: #333; font-weight: 500;">MD5</div>
+            </div>
+            <div style="background: white; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px 8px; text-align: center;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: #f5f5f5; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #888;">⏱</div>
+              <div style="font-size: 10px; color: #333; font-weight: 500;">时间戳</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>柔和渐变</h3>
+      <p>淡色渐变背景，圆角卡片带轻微阴影，温馨现代。</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="padding: 12px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+          <div style="text-align: center; margin-bottom: 10px; font-size: 14px; font-weight: 600; color: #4a5568;">DevTools</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <div style="background: white; border-radius: 12px; padding: 14px 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white;">🔐</div>
+              <div style="font-size: 10px; color: #4a5568; font-weight: 500;">AES</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 14px 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #f093fb, #f5576c); margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white;">#</div>
+              <div style="font-size: 10px; color: #4a5568; font-weight: 500;">MD5</div>
+            </div>
+            <div style="background: white; border-radius: 12px; padding: 14px 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #4facfe, #00f2fe); margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: white;">⏱</div>
+              <div style="font-size: 10px; color: #4a5568; font-weight: 500;">时间戳</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>暗色主题</h3>
+      <p>深色背景，亮色点缀，开发者友好的暗色模式。</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="padding: 12px; background: #1a1a2e;">
+          <div style="text-align: center; margin-bottom: 10px; font-size: 14px; font-weight: 600; color: #e0e0e0; letter-spacing: 1px;">DevTools</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <div style="background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; padding: 14px 8px; text-align: center;">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: #0f3460; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px;">🔐</div>
+              <div style="font-size: 10px; color: #a0c4ff; font-weight: 500;">AES</div>
+            </div>
+            <div style="background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; padding: 14px 8px; text-align: center;">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: #0f3460; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px;">#</div>
+              <div style="font-size: 10px; color: #a0c4ff; font-weight: 500;">MD5</div>
+            </div>
+            <div style="background: #16213e; border: 1px solid #2a2a4a; border-radius: 10px; padding: 14px 8px; text-align: center;">
+              <div style="width: 28px; height: 28px; border-radius: 8px; background: #0f3460; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 12px;">⏱</div>
+              <div style="font-size: 10px; color: #a0c4ff; font-weight: 500;">时间戳</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
