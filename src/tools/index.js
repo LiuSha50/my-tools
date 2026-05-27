@@ -1,7 +1,10 @@
+import md5 from './hash/md5'
+import sha from './hash/sha'
 import caseConverter from './text/case'
 import timestamp from './text/timestamp'
 
 export const tools = [
+  md5, sha,
   caseConverter, timestamp
 ]
 
