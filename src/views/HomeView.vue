@@ -5,6 +5,17 @@
       <p class="home-subtitle">开发者常用工具集</p>
     </header>
 
+    <section v-if="favTools.length" class="tool-section">
+      <h2 class="section-title">★ 常用</h2>
+      <div class="tool-grid">
+        <ToolCard
+          v-for="tool in favTools"
+          :key="tool.id"
+          :tool="tool"
+        />
+      </div>
+    </section>
+
     <section v-for="category in categoryOrder" :key="category" class="tool-section">
       <h2 class="section-title">{{ categoryNames[category] }}</h2>
       <div class="tool-grid">
@@ -23,8 +34,16 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import ToolCard from '../components/ToolCard.vue'
-import { tools, toolsByCategory, categoryNames, categoryOrder } from '../tools/index.js'
+import { tools, toolsByCategory, categoryNames, categoryOrder, getToolById } from '../tools/index.js'
+import { useFavorites } from '../composables/useFavorites.js'
+
+const { favorites } = useFavorites()
+
+const favTools = computed(() =>
+  favorites.value.map(id => getToolById(id)).filter(Boolean)
+)
 </script>
 
 <style scoped>
