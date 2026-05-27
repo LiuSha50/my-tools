@@ -1,20 +1,8 @@
-// Tools will be imported here as they are created
-// import aes from './crypto/aes'
-// import des from './crypto/des'
-// import rsa from './crypto/rsa'
-// import md5 from './hash/md5'
-// import sha from './hash/sha'
-// import base64 from './encoding/base64'
-// import urlTool from './encoding/url'
-// import unicode from './encoding/unicode'
-// import caseConverter from './text/case'
-// import timestamp from './text/timestamp'
+import caseConverter from './text/case'
+import timestamp from './text/timestamp'
 
 export const tools = [
-  // aes, des, rsa,
-  // md5, sha,
-  // base64, urlTool, unicode,
-  // caseConverter, timestamp
+  caseConverter, timestamp
 ]
 
 export const toolsByCategory = {
