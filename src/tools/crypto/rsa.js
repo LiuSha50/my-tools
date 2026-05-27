@@ -1,5 +1,11 @@
 function arrayBufferToBase64(buffer) {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const chunkSize = 8192
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+  }
+  return btoa(binary)
 }
 
 function base64ToArrayBuffer(base64) {
@@ -65,7 +71,8 @@ export default {
     if (mode === 'generate') {
       const { publicKey, privateKey } = await generateKeyPair(options.modulusLength || 2048)
       return {
-        result: `=== 公钥 ===\n${publicKey}\n\n=== 私钥 ===\n${privateKey}\n\n请将公钥和私钥妥善保存，用于上方的加密和解密操作。`
+        result: `=== 公钥 ===\n${publicKey}\n\n=== 私钥 ===\n${privateKey}\n\n密钥已自动填入上方输入框，可直接用于加密和解密。`,
+        fillOptions: { publicKey, privateKey }
       }
     }
 

@@ -24,7 +24,7 @@
 
 <script setup>
 import ToolCard from '../components/ToolCard.vue'
-import { toolsByCategory, categoryNames, categoryOrder } from '../tools/index.js'
+import { tools, toolsByCategory, categoryNames, categoryOrder } from '../tools/index.js'
 </script>
 
 <style scoped>
@@ -54,7 +54,6 @@ import { toolsByCategory, categoryNames, categoryOrder } from '../tools/index.js
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text-secondary);
-  text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: calc(var(--spacing-unit) * 1.5);
   padding-bottom: var(--spacing-unit);

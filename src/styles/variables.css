@@ -7,6 +7,10 @@
   --color-primary: #4a9eda;
   --color-primary-hover: #3a8eca;
   --color-error: #e53e3e;
+  --color-error-bg: #fff5f5;
+  --color-error-border: #fed7d7;
+  --color-info-bg: #ebf8ff;
+  --color-info-border: #bee3f8;
   --color-success: #38a169;
   --radius-sm: 6px;
   --radius-md: 10px;

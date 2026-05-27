@@ -127,6 +127,9 @@ async function execute(mode) {
   try {
     const result = await tool.value.execute(inputText.value, optionValues.value, mode)
     outputText.value = result.result
+    if (result.fillOptions) {
+      Object.assign(optionValues.value, result.fillOptions)
+    }
   } catch (e) {
     error.value = e.message || '执行出错'
   } finally {
@@ -247,8 +250,8 @@ async function execute(mode) {
 
 .loading-msg {
   padding: calc(var(--spacing-unit) * 1.5);
-  background: #ebf8ff;
-  border: 1px solid #bee3f8;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
   border-radius: var(--radius-sm);
   color: var(--color-primary);
   font-size: 13px;
@@ -257,8 +260,8 @@ async function execute(mode) {
 
 .error-msg {
   padding: calc(var(--spacing-unit) * 1.5);
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
   border-radius: var(--radius-sm);
   color: var(--color-error);
   font-size: 13px;
