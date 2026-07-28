@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { getFunctionDefinition } from '../catalog'
 import { createDefaultViewport, panViewport, zoomViewport } from '../composables/usePlotViewport'
 import { getVisibleBranches } from '../plotting/branches'
@@ -66,11 +66,12 @@ const emit = defineEmits<{
 
 const FALLBACK_SIZE = { width: 800, height: 420 }
 const PADDING = { top: 22, right: 24, bottom: 42, left: 54 }
+const plotInstanceId = useId()
+const plotTitleId = `function-plot-${plotInstanceId}-title`
+const plotDescriptionId = `function-plot-${plotInstanceId}-description`
 const container = ref<HTMLElement | null>(null)
 const svgElement = ref<SVGSVGElement | null>(null)
-const measuredSize = ref(
-  typeof ResizeObserver === 'undefined' ? FALLBACK_SIZE : { width: 0, height: 0 },
-)
+const measuredSize = ref({ width: 0, height: 0 })
 const viewport = ref<PlotViewport>(createDefaultViewport(props.category, props.functionIds))
 let resizeObserver: ResizeObserver | undefined
 let pointerState: PointerState | undefined
@@ -198,8 +199,20 @@ const visibleMarkers = computed<PlotMarkerEntry[]>(() => definitions.value.flatM
     }))
 )))
 
-const activeTooltip = computed(() => pinnedPoint.value ?? hoverPoint.value)
+const activeTooltip = computed<InteractivePoint | null>(() => {
+  const point = pinnedPoint.value ?? hoverPoint.value
+  if (!point || !hasPositivePlotSize.value) return point
+  const projected = dataToSvg(point, viewport.value, size.value)
+  return {
+    ...point,
+    svgX: projected.x,
+    svgY: projected.y,
+  }
+})
 const isTooltipPinned = computed(() => pinnedPoint.value !== null)
+const plotTitle = computed(() => props.category === 'inverse'
+  ? '反三角函数交互图像'
+  : '三角函数交互图像')
 
 function formatNumber(value: number): string {
   const rounded = Number(value.toFixed(2))
@@ -247,6 +260,9 @@ function zoom(factor: number) {
 }
 
 function resetViewport() {
+  cancelPendingInteraction()
+  hoverPoint.value = null
+  pinnedPoint.value = null
   setViewport(createDefaultViewport(props.category, props.functionIds))
 }
 
@@ -308,6 +324,16 @@ function schedulePan(delta: DataPoint) {
     return
   }
   animationFrameId = requestAnimationFrame(applyPendingPan)
+}
+
+function cancelPendingInteraction() {
+  if (animationFrameId !== undefined && typeof cancelAnimationFrame !== 'undefined') {
+    cancelAnimationFrame(animationFrameId)
+  }
+  animationFrameId = undefined
+  pendingPanDelta = undefined
+  pointerState = undefined
+  suppressClick = false
 }
 
 function onWheel(event: WheelEvent) {
@@ -444,13 +470,11 @@ function measureContainer() {
 watch(
   () => [props.category, ...props.functionIds] as const,
   () => {
-    viewport.value = createDefaultViewport(props.category, props.functionIds)
-    hoverPoint.value = null
-    pinnedPoint.value = null
+    resetViewport()
   },
 )
 
-onMounted(async () => {
+onMounted(() => {
   addSvgListeners()
   if (typeof ResizeObserver !== 'undefined' && container.value) {
     resizeObserver = new ResizeObserver((entries) => {
@@ -462,7 +486,6 @@ onMounted(async () => {
     })
     resizeObserver.observe(container.value)
   } else {
-    await nextTick()
     measureContainer()
     if (measuredSize.value.width <= 0 || measuredSize.value.height <= 0) {
       measuredSize.value = FALLBACK_SIZE
@@ -474,12 +497,7 @@ onBeforeUnmount(() => {
   removeSvgListeners()
   resizeObserver?.disconnect()
   resizeObserver = undefined
-  if (animationFrameId !== undefined && typeof cancelAnimationFrame !== 'undefined') {
-    cancelAnimationFrame(animationFrameId)
-  }
-  animationFrameId = undefined
-  pendingPanDelta = undefined
-  pointerState = undefined
+  cancelPendingInteraction()
 })
 </script>
 
@@ -496,11 +514,11 @@ onBeforeUnmount(() => {
         ref="svgElement"
         :viewBox="`0 0 ${size.width} ${size.height}`"
         role="img"
-        aria-labelledby="function-plot-title function-plot-description"
+        :aria-labelledby="`${plotTitleId} ${plotDescriptionId}`"
         tabindex="0"
       >
-        <title id="function-plot-title">三角函数交互图像</title>
-        <desc id="function-plot-description">显示所选函数、坐标轴、关键点与渐近线。</desc>
+        <title :id="plotTitleId">{{ plotTitle }}</title>
+        <desc :id="plotDescriptionId">显示所选函数、坐标轴、关键点与渐近线。</desc>
         <template v-if="hasPositivePlotSize">
           <PlotAxes
             :category="category"

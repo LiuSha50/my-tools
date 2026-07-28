@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
+import { createSSRApp, defineComponent, h } from 'vue'
+import { renderToString } from 'vue/server-renderer'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import FunctionPlot from './FunctionPlot.vue'
 import PlotTooltip from './PlotTooltip.vue'
@@ -65,7 +67,7 @@ describe('FunctionPlot', () => {
     expect(wrapper.get('svg').attributes('role')).toBe('img')
   })
 
-  test('三角函数横轴使用 π 刻度而纵轴使用数字刻度', () => {
+  test('三角函数横轴使用 π 刻度而纵轴使用数字刻度', async () => {
     const wrapper = mount(FunctionPlot, {
       props: {
         functionIds: ['sin'],
@@ -73,12 +75,13 @@ describe('FunctionPlot', () => {
         markerVisibility,
       },
     })
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.get('[data-axis="x"]').text()).toContain('π')
     expect(wrapper.get('[data-axis="y"]').text()).not.toContain('π')
   })
 
-  test('反三角函数横轴使用数字刻度而纵轴使用 π 刻度', () => {
+  test('反三角函数横轴使用数字刻度而纵轴使用 π 刻度', async () => {
     const wrapper = mount(FunctionPlot, {
       props: {
         functionIds: ['arcsin'],
@@ -86,12 +89,13 @@ describe('FunctionPlot', () => {
         markerVisibility,
       },
     })
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.get('[data-axis="x"]').text()).not.toContain('π')
     expect(wrapper.get('[data-axis="y"]').text()).toContain('π')
   })
 
-  test('函数曲线使用目录中的线型并提供文字标签', () => {
+  test('函数曲线使用目录中的线型并提供文字标签', async () => {
     const wrapper = mount(FunctionPlot, {
       props: {
         functionIds: ['cos'],
@@ -99,6 +103,7 @@ describe('FunctionPlot', () => {
         markerVisibility,
       },
     })
+    await wrapper.vm.$nextTick()
     const path = wrapper.get('[data-series="cos"] path')
 
     expect(path.attributes('stroke-dasharray')).toBeTruthy()
@@ -230,6 +235,29 @@ describe('FunctionPlot', () => {
     expect(wrapper.find('[data-plot-tooltip]').exists()).toBe(false)
   })
 
+  test('固定提示在缩放后按原数据坐标重新投影', async () => {
+    const wrapper = mount(FunctionPlot, {
+      props: {
+        functionIds: ['sin'],
+        category: 'trig',
+        markerVisibility,
+      },
+    })
+    const svg = wrapper.get('svg')
+
+    dispatchPointer(svg.element, 'pointermove', { clientX: 560, clientY: 150 })
+    await wrapper.vm.$nextTick()
+    await svg.trigger('click')
+    const tooltip = wrapper.get('[data-plot-tooltip]')
+    const originalText = tooltip.text()
+    const originalPosition = tooltip.attributes('transform')
+
+    await wrapper.get('button[aria-label="放大图像"]').trigger('click')
+
+    expect(wrapper.get('[data-plot-tooltip]').text()).toBe(originalText)
+    expect(wrapper.get('[data-plot-tooltip]').attributes('transform')).not.toBe(originalPosition)
+  })
+
   test('触摸拖动十字准线不会平移视口', async () => {
     const wrapper = mount(FunctionPlot, {
       props: {
@@ -300,7 +328,7 @@ describe('FunctionPlot', () => {
     expect(wrapper.get('[data-plot-tooltip]').attributes('transform')).not.toBe(firstPosition)
   })
 
-  test('按开关显示定义域和视口内的目录标记', () => {
+  test('按开关显示定义域和视口内的目录标记', async () => {
     const wrapper = mount(FunctionPlot, {
       props: {
         functionIds: ['sin'],
@@ -308,6 +336,7 @@ describe('FunctionPlot', () => {
         markerVisibility: { ...markerVisibility, zeros: false },
       },
     })
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-marker-kind="zero"]').exists()).toBe(false)
     expect(wrapper.findAll('[data-marker-kind="maximum"]')).toHaveLength(1)
@@ -386,5 +415,92 @@ describe('FunctionPlot', () => {
 
     expect(removeEventListener).toHaveBeenCalled()
     expect(cancelAnimationFrame).toHaveBeenCalledWith(23)
+  })
+
+  test('props 重置先取消旧平移帧并统一发出默认 viewport', async () => {
+    let pendingFrame: FrameRequestCallback | undefined
+    const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+      pendingFrame = callback
+      return 31
+    })
+    const cancelAnimationFrame = vi.fn()
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrame)
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame)
+    const wrapper = mount(FunctionPlot, {
+      props: {
+        functionIds: ['sin'],
+        category: 'trig',
+        markerVisibility,
+      },
+    })
+    const svg = wrapper.get('svg')
+
+    dispatchPointer(svg.element, 'pointerdown', { clientX: 100, clientY: 100, pointerId: 5 })
+    dispatchPointer(svg.element, 'pointermove', { clientX: 120, clientY: 100, pointerId: 5 })
+    expect(pendingFrame).toBeTypeOf('function')
+
+    await wrapper.setProps({ functionIds: ['tan'] })
+
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(31)
+    expect(wrapper.emitted('viewport-change')).toEqual([[{
+      xMin: -2 * Math.PI,
+      xMax: 2 * Math.PI,
+      yMin: -4,
+      yMax: 4,
+    }]])
+
+    pendingFrame?.(0)
+    dispatchPointer(svg.element, 'pointermove', { clientX: 140, clientY: 100, pointerId: 5 })
+    expect(wrapper.emitted('viewport-change')).toHaveLength(1)
+    expect(requestAnimationFrame).toHaveBeenCalledOnce()
+  })
+
+  test('SSR 初始树不受 ResizeObserver 可用性影响', async () => {
+    const props = {
+      functionIds: ['sin'] as const,
+      category: 'trig' as const,
+      markerVisibility,
+    }
+    vi.stubGlobal('ResizeObserver', undefined)
+    const withoutResizeObserver = await renderToString(createSSRApp(FunctionPlot, props))
+
+    class FakeResizeObserver {
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    }
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    const withResizeObserver = await renderToString(createSSRApp(FunctionPlot, props))
+
+    expect(withoutResizeObserver).toBe(withResizeObserver)
+    expect(withoutResizeObserver).not.toContain('data-series')
+  })
+
+  test('同一应用内图像语义 ID 唯一且反三角标题准确', () => {
+    const Host = defineComponent({
+      setup: () => () => h('div', [
+        h(FunctionPlot, {
+          functionIds: ['sin'],
+          category: 'trig',
+          markerVisibility,
+        }),
+        h(FunctionPlot, {
+          functionIds: ['arcsin'],
+          category: 'inverse',
+          markerVisibility,
+        }),
+      ]),
+    })
+    const wrapper = mount(Host)
+    const svgs = wrapper.findAll('svg')
+    const titleIds = svgs.map(svg => svg.get('title').attributes('id'))
+    const descriptionIds = svgs.map(svg => svg.get('desc').attributes('id'))
+
+    expect(new Set(titleIds).size).toBe(2)
+    expect(new Set(descriptionIds).size).toBe(2)
+    expect(svgs[0]!.attributes('aria-labelledby')).toBe(`${titleIds[0]} ${descriptionIds[0]}`)
+    expect(svgs[1]!.attributes('aria-labelledby')).toBe(`${titleIds[1]} ${descriptionIds[1]}`)
+    expect(svgs[0]!.get('title').text()).toBe('三角函数交互图像')
+    expect(svgs[1]!.get('title').text()).toBe('反三角函数交互图像')
   })
 })
