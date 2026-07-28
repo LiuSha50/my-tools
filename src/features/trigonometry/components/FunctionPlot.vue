@@ -36,6 +36,7 @@ interface PlotAsymptote {
 interface PlotMarkerEntry extends MathPoint {
   functionName: string
   color: string
+  darkColor: string
 }
 
 interface InteractivePoint {
@@ -196,6 +197,7 @@ const visibleMarkers = computed<PlotMarkerEntry[]>(() => definitions.value.flatM
       yLabel: plainMathLabel(point.yLabel),
       functionName: definition.name,
       color: definition.style.color,
+      darkColor: definition.style.darkColor,
     }))
 )))
 

@@ -361,6 +361,35 @@ describe('FunctionPlot', () => {
     expect(wrapper.get('[data-marker-kind="maximum"] title').text()).toContain('π/2')
   })
 
+  test('关键点、零点与极值标记都传递 catalog 浅色和深色并通过主题变量着色', async () => {
+    const wrapper = mount(FunctionPlot, {
+      props: {
+        functionIds: ['sin', 'tan'],
+        category: 'trig',
+        markerVisibility,
+      },
+    })
+    await wrapper.vm.$nextTick()
+
+    const keyMarker = wrapper.findAll('[data-marker-kind="key"]').find(
+      marker => marker.get('title').text().includes('正切函数'),
+    )
+    const zeroMarker = wrapper.findAll('[data-marker-kind="zero"]').find(
+      marker => marker.get('title').text().includes('正弦函数'),
+    )
+    const extremaMarker = wrapper.findAll('[data-marker-kind="maximum"]').find(
+      marker => marker.get('title').text().includes('正弦函数'),
+    )
+
+    expect(keyMarker?.attributes('style')).toContain('--marker-light-color: #16a34a')
+    expect(keyMarker?.attributes('style')).toContain('--marker-dark-color: #4ade80')
+    expect(keyMarker?.get('rect').attributes('fill')).toBe('var(--marker-color)')
+    expect(zeroMarker?.attributes('style')).toContain('--marker-light-color: #2563eb')
+    expect(zeroMarker?.attributes('style')).toContain('--marker-dark-color: #60a5fa')
+    expect(zeroMarker?.get('circle').attributes('stroke')).toBe('var(--marker-color)')
+    expect(extremaMarker?.get('path').attributes('fill')).toBe('var(--marker-color)')
+  })
+
   test('提示框按角度轴使用 π 坐标标签', () => {
     const wrapper = mount(PlotTooltip, {
       props: {

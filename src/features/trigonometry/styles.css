@@ -475,6 +475,10 @@
   stroke: var(--series-dark-color);
 }
 
+.trigonometry-page[data-theme="dark"] [data-plot-marker] {
+  --marker-color: var(--marker-dark-color);
+}
+
 .trigonometry-page[data-theme="light"] [data-series] {
   --series-color: var(--series-light-color);
   stroke: var(--series-light-color);
@@ -483,6 +487,10 @@
 .trigonometry-page[data-theme="light"] [data-series-endpoint] {
   fill: var(--series-light-color);
   stroke: var(--series-light-color);
+}
+
+.trigonometry-page[data-theme="light"] [data-plot-marker] {
+  --marker-color: var(--marker-light-color);
 }
 
 @media (max-width: 900px) {

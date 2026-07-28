@@ -46,3 +46,27 @@
 - 10 条易错点、3 个展开例题、2 个补充函数、4 种 catalog 线型均有自动测试保护。
 - 页面主题、响应式布局、语义顺序、公式标签与 arccot 约定均满足 Task 9 简报。
 - 未修改 main，只在 `codex/trigonometry-handbook` 专用工作树完成。
+
+## 修复轮次 1/5
+
+### Important 1：主题 SSR 与 Storage 安全边界
+
+- 根因：旧实现会在 `setup()` 直接读取全局 `localStorage`，导致 SSR/客户端初态可能不同；Storage 属性访问或 `getItem`、`removeItem`、`setItem` 抛出的 `SecurityError` 也会直接中断渲染或交互。
+- 修复：`setup()` 固定从 `system/light` 开始，只在 `onMounted` 后通过 `window` 边界读取浏览器状态；Storage getter 与三个方法均先检查能力并分别用 `try/catch` 隔离。
+- 降级：Storage 不存在、方法缺失或被浏览器拒绝时，主题切换仍更新内存状态；非法存储值的清理失败不会中断页面。
+- 生命周期：系统主题监听仅在能力存在且注册成功时保存引用，卸载时清理。
+- TDD：新增无 `window` 的 SSR 测试，以及客户端 setup 初态、Storage getter、缺方法、get/remove/set 抛错、非法值和监听清理测试；修复前稳定复现 7 项失败及 1 个未处理异常，修复后 2 个主题测试文件共 9 项通过。
+
+### Important 2：图像标记深浅主题配色
+
+- 根因：`FunctionPlot` 构造标记数据时只传递 catalog 的浅色，`PlotMarkers` 又把浅色直接写入 SVG，导致关键点、零点和极值点无法跟随手动深色主题。
+- 修复：标记数据同时传递 `color` 与 `darkColor`；每个 SVG 标记公开 `--marker-light-color`、`--marker-dark-color`，三类形状统一使用 `--marker-color`。
+- 解析规则：组件内 `prefers-color-scheme` 提供独立使用时的系统默认，页面根 `data-theme="light|dark"` 以更高优先级解析手动主题，仍限定在三角函数页面内。
+- TDD：先验证关键点、零点和极值缺少双主题变量而失败，再实现并转绿。
+
+### 修复轮次验证
+
+- 聚焦：13 个测试文件、105 项测试通过。
+- 全量：17 个测试文件、138 项测试通过。
+- `pnpm typecheck`：通过。
+- `pnpm build`：通过。

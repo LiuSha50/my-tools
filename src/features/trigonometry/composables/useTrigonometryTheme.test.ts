@@ -1,19 +1,33 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { defineComponent, nextTick } from 'vue'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import { useTrigonometryTheme } from './useTrigonometryTheme'
 
-function installStorageHarness() {
-  const values = new Map<string, string>()
-  vi.stubGlobal('localStorage', {
+interface ThemeSnapshot {
+  theme: string
+  resolvedTheme: string
+}
+
+const originalStorageDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage')
+
+function setWindowStorage(storage: unknown) {
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: storage,
+  })
+}
+
+function makeStorage(initial: Record<string, string> = {}) {
+  const values = new Map(Object.entries(initial))
+  return {
     get length() { return values.size },
-    clear: () => values.clear(),
-    getItem: (key: string) => values.get(key) ?? null,
-    key: (index: number) => [...values.keys()][index] ?? null,
-    removeItem: (key: string) => values.delete(key),
-    setItem: (key: string, value: string) => values.set(key, String(value)),
-  } satisfies Storage)
+    clear: vi.fn(() => values.clear()),
+    getItem: vi.fn((key: string) => values.get(key) ?? null),
+    key: vi.fn((index: number) => [...values.keys()][index] ?? null),
+    removeItem: vi.fn((key: string) => values.delete(key)),
+    setItem: vi.fn((key: string, value: string) => values.set(key, String(value))),
+  } satisfies Storage
 }
 
 function makeMedia(initialMatches: boolean) {
@@ -23,8 +37,8 @@ function makeMedia(initialMatches: boolean) {
     get matches() { return matches },
     media: '(prefers-color-scheme: dark)',
     onchange: null,
-    addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.add(listener),
-    removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.delete(listener),
+    addEventListener: vi.fn((_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.add(listener)),
+    removeEventListener: vi.fn((_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.delete(listener)),
     addListener: () => undefined,
     removeListener: () => undefined,
     dispatchEvent: () => true,
@@ -39,27 +53,56 @@ function makeMedia(initialMatches: boolean) {
   }
 }
 
-const ThemeHarness = defineComponent({
-  setup() {
-    return useTrigonometryTheme()
-  },
-  template: '<button :data-theme="theme" :data-resolved="resolvedTheme" @click="toggleTheme">切换</button>',
+function mountThemeHarness(setupSnapshot?: ThemeSnapshot) {
+  return mount(defineComponent({
+    setup() {
+      const state = useTrigonometryTheme()
+      if (setupSnapshot) {
+        setupSnapshot.theme = state.theme.value
+        setupSnapshot.resolvedTheme = state.resolvedTheme.value
+      }
+      return state
+    },
+    template: '<button :data-theme="theme" :data-resolved="resolvedTheme" @click="toggleTheme">切换</button>',
+  }))
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  if (originalStorageDescriptor) {
+    Object.defineProperty(window, 'localStorage', originalStorageDescriptor)
+  } else {
+    Reflect.deleteProperty(window, 'localStorage')
+  }
 })
 
-beforeEach(() => installStorageHarness())
-afterEach(() => vi.unstubAllGlobals())
-
 describe('useTrigonometryTheme', () => {
-  test('未保存偏好时跟随系统并响应后续变化', async () => {
-    const media = makeMedia(false)
-    const wrapper = mount(ThemeHarness)
+  test('服务端同构初态保持 system/light，挂载后才读取保存偏好和系统主题', async () => {
+    setWindowStorage(makeStorage({ 'trigonometry-theme': 'dark' }))
+    makeMedia(false)
+    const setupSnapshot = { theme: '', resolvedTheme: '' }
+    const wrapper = mountThemeHarness(setupSnapshot)
 
+    expect(setupSnapshot).toEqual({ theme: 'system', resolvedTheme: 'light' })
+    await nextTick()
+    expect(wrapper.get('button').attributes()).toMatchObject({
+      'data-theme': 'dark',
+      'data-resolved': 'dark',
+    })
+  })
+
+  test('未保存偏好时挂载后跟随系统并响应变化，卸载时清理监听', async () => {
+    setWindowStorage(makeStorage())
+    const media = makeMedia(false)
+    const wrapper = mountThemeHarness()
+
+    await nextTick()
     expect(wrapper.get('button').attributes()).toMatchObject({
       'data-theme': 'system',
       'data-resolved': 'light',
     })
     media.change(true)
-    await wrapper.vm.$nextTick()
+    await nextTick()
     expect(wrapper.get('button').attributes('data-resolved')).toBe('dark')
 
     wrapper.unmount()
@@ -67,33 +110,92 @@ describe('useTrigonometryTheme', () => {
   })
 
   test('手动切换只保存 light 或 dark 且不受系统变化影响', async () => {
-    localStorage.setItem('unrelated-setting', 'keep')
+    const storage = makeStorage({ 'unrelated-setting': 'keep' })
+    setWindowStorage(storage)
     const media = makeMedia(true)
-    const wrapper = mount(ThemeHarness)
+    const wrapper = mountThemeHarness()
+    await nextTick()
 
     await wrapper.get('button').trigger('click')
     expect(wrapper.get('button').attributes()).toMatchObject({
       'data-theme': 'light',
       'data-resolved': 'light',
     })
-    expect(localStorage.getItem('trigonometry-theme')).toBe('light')
-    expect(localStorage.getItem('unrelated-setting')).toBe('keep')
+    expect(storage.getItem('trigonometry-theme')).toBe('light')
+    expect(storage.getItem('unrelated-setting')).toBe('keep')
 
     media.change(false)
-    await wrapper.vm.$nextTick()
+    await nextTick()
     expect(wrapper.get('button').attributes('data-resolved')).toBe('light')
   })
 
-  test('忽略损坏的已保存值并保持系统模式', () => {
-    localStorage.setItem('trigonometry-theme', 'sepia')
+  test('localStorage 属性访问抛出 SecurityError 时仍可挂载和内存切换', async () => {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() { throw new DOMException('denied', 'SecurityError') },
+    })
     makeMedia(false)
 
-    const wrapper = mount(ThemeHarness)
+    const wrapper = mountThemeHarness()
+    await nextTick()
+    await expect(wrapper.get('button').trigger('click')).resolves.toBeUndefined()
+    expect(wrapper.get('button').attributes()).toMatchObject({
+      'data-theme': 'dark',
+      'data-resolved': 'dark',
+    })
+  })
 
+  test('伪 localStorage 缺少方法时降级为仅内存主题', async () => {
+    setWindowStorage({})
+    makeMedia(false)
+
+    const wrapper = mountThemeHarness()
+    await nextTick()
+    await expect(wrapper.get('button').trigger('click')).resolves.toBeUndefined()
+    expect(wrapper.get('button').attributes('data-theme')).toBe('dark')
+  })
+
+  test('getItem 抛错时忽略存储并继续跟随系统', async () => {
+    setWindowStorage({
+      getItem: () => { throw new DOMException('denied', 'SecurityError') },
+    })
+    makeMedia(true)
+
+    const wrapper = mountThemeHarness()
+    await nextTick()
+    expect(wrapper.get('button').attributes()).toMatchObject({
+      'data-theme': 'system',
+      'data-resolved': 'dark',
+    })
+  })
+
+  test('非法值触发 removeItem 抛错时仍保持系统模式', async () => {
+    const removeItem = vi.fn(() => { throw new DOMException('denied', 'SecurityError') })
+    setWindowStorage({ getItem: () => 'sepia', removeItem })
+    makeMedia(false)
+
+    const wrapper = mountThemeHarness()
+    await nextTick()
+    expect(removeItem).toHaveBeenCalledWith('trigonometry-theme')
     expect(wrapper.get('button').attributes()).toMatchObject({
       'data-theme': 'system',
       'data-resolved': 'light',
     })
-    expect(localStorage.getItem('trigonometry-theme')).toBeNull()
+  })
+
+  test('setItem 抛错时 toggle 仍更新内存主题', async () => {
+    setWindowStorage({
+      getItem: () => null,
+      setItem: () => { throw new DOMException('denied', 'SecurityError') },
+    })
+    makeMedia(false)
+    const wrapper = mountThemeHarness()
+    await nextTick()
+
+    await expect(wrapper.get('button').trigger('click')).resolves.toBeUndefined()
+    expect(wrapper.get('button').attributes()).toMatchObject({
+      'data-theme': 'dark',
+      'data-resolved': 'dark',
+    })
   })
 })
