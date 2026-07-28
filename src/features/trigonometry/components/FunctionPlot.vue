@@ -468,7 +468,7 @@ function measureContainer() {
 }
 
 watch(
-  () => [props.category, ...props.functionIds] as const,
+  () => props.category,
   () => {
     resetViewport()
   },

@@ -417,7 +417,7 @@ describe('FunctionPlot', () => {
     expect(cancelAnimationFrame).toHaveBeenCalledWith(23)
   })
 
-  test('props 重置先取消旧平移帧并统一发出默认 viewport', async () => {
+  test('普通函数多选保留视口，类别变化才取消旧平移并重置 viewport', async () => {
     let pendingFrame: FrameRequestCallback | undefined
     const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
       pendingFrame = callback
@@ -439,14 +439,22 @@ describe('FunctionPlot', () => {
     dispatchPointer(svg.element, 'pointermove', { clientX: 120, clientY: 100, pointerId: 5 })
     expect(pendingFrame).toBeTypeOf('function')
 
-    await wrapper.setProps({ functionIds: ['tan'] })
+    await wrapper.setProps({ functionIds: ['sin', 'tan'] })
+
+    expect(cancelAnimationFrame).not.toHaveBeenCalled()
+    expect(wrapper.emitted('viewport-change')).toBeUndefined()
+
+    await wrapper.setProps({
+      category: 'inverse',
+      functionIds: ['arcsin'],
+    })
 
     expect(cancelAnimationFrame).toHaveBeenCalledWith(31)
     expect(wrapper.emitted('viewport-change')).toEqual([[{
-      xMin: -2 * Math.PI,
-      xMax: 2 * Math.PI,
-      yMin: -4,
-      yMax: 4,
+      xMin: -4,
+      xMax: 4,
+      yMin: -Math.PI,
+      yMax: Math.PI,
     }]])
 
     pendingFrame?.(0)
