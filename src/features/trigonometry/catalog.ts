@@ -23,9 +23,9 @@ const evaluators = {
 
 const isFiniteReal = (x: number) => Number.isFinite(x)
 const isUnitInterval = (x: number) =>
-  Number.isFinite(x) && x >= -1 - EPSILON && x <= 1 + EPSILON
+  Number.isFinite(x) && x >= -1 && x <= 1
 const isOutsideUnitInterval = (x: number) =>
-  Number.isFinite(x) && Math.abs(x) >= 1 - EPSILON
+  Number.isFinite(x) && Math.abs(x) >= 1
 
 export const trigFunctionIds =
   ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'] as const satisfies readonly FunctionId[]
@@ -401,12 +401,12 @@ export const functionCatalog = [
     domain: '(-\\infty, -1] \\cup [1, +\\infty)',
     range: '[0, \\pi] \\setminus \\{\\pi/2\\}',
     principalRange: '[0, \\pi] \\setminus \\{\\pi/2\\}',
-    parity: '依主值约定而定',
+    parity: '非奇非偶',
     increasingIntervals: ['(-\\infty, -1]', '[1, +\\infty)'],
     decreasingIntervals: [],
     period: '无周期',
     zeros: 'x = 1',
-    extrema: '依主值约定而定',
+    extrema: '最小值 0：x = 1；最大值 \\pi：x = -1',
     verticalAsymptotes: [],
     horizontalAsymptotes: ['y = \\pi/2'],
     continuousIntervals: ['(-\\infty, -1]', '[1, +\\infty)'],
@@ -430,12 +430,12 @@ export const functionCatalog = [
     domain: '(-\\infty, -1] \\cup [1, +\\infty)',
     range: '[-\\pi/2, \\pi/2] \\setminus \\{0\\}',
     principalRange: '[-\\pi/2, \\pi/2] \\setminus \\{0\\}',
-    parity: '依主值约定而定',
+    parity: '奇函数',
     increasingIntervals: [],
     decreasingIntervals: ['(-\\infty, -1]', '[1, +\\infty)'],
     period: '无周期',
     zeros: '无零点',
-    extrema: '依主值约定而定',
+    extrema: '最小值 -\\pi/2：x = -1；最大值 \\pi/2：x = 1',
     verticalAsymptotes: [],
     horizontalAsymptotes: ['y = 0'],
     continuousIntervals: ['(-\\infty, -1]', '[1, +\\infty)'],

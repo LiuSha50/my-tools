@@ -65,4 +65,71 @@ describe('三角函数目录', () => {
       '(3\\pi/2 + 2k\\pi, 2\\pi + 2k\\pi)',
     ])
   })
+
+  test('闭定义域不会因数值容差向外扩张', () => {
+    for (const id of ['arcsin', 'arccos'] as const) {
+      const item = getFunctionDefinition(id)
+      expect(item.isDefined(-1)).toBe(true)
+      expect(item.isDefined(1)).toBe(true)
+      expect(item.isDefined(-1 - 1e-12)).toBe(false)
+      expect(item.isDefined(1 + 1e-12)).toBe(false)
+    }
+
+    for (const id of ['arcsec', 'arccsc'] as const) {
+      const item = getFunctionDefinition(id)
+      expect(item.isDefined(-1)).toBe(true)
+      expect(item.isDefined(1)).toBe(true)
+      expect(item.isDefined(-1 + 1e-12)).toBe(false)
+      expect(item.isDefined(1 - 1e-12)).toBe(false)
+    }
+  })
+
+  test('补充函数的关键点均在定义域内且可由求值器复现', () => {
+    for (const id of supplementFunctionIds) {
+      const item = getFunctionDefinition(id)
+
+      for (const point of item.keyPoints) {
+        expect(item.isDefined(point.x)).toBe(true)
+        expect(Number.isFinite(item.evaluate(point.x))).toBe(true)
+        expect(item.evaluate(point.x)).toBeCloseTo(point.y, 10)
+      }
+    }
+  })
+
+  test('补充函数的奇偶性与极值匹配所选主值约定', () => {
+    const arcsec = getFunctionDefinition('arcsec')
+    expect(arcsec.parity).toBe('非奇非偶')
+    expect(arcsec.extrema).toBe('最小值 0：x = 1；最大值 \\pi：x = -1')
+
+    const arccsc = getFunctionDefinition('arccsc')
+    expect(arccsc.parity).toBe('奇函数')
+    expect(arccsc.extrema).toBe('最小值 -\\pi/2：x = -1；最大值 \\pi/2：x = 1')
+  })
+
+  test('四组反函数限制区间保留正确的数值边界和开闭性', () => {
+    expect(getFunctionDefinition('arcsin').inverseRelation?.restrictionBounds).toEqual({
+      min: -Math.PI / 2,
+      max: Math.PI / 2,
+      minOpen: false,
+      maxOpen: false,
+    })
+    expect(getFunctionDefinition('arccos').inverseRelation?.restrictionBounds).toEqual({
+      min: 0,
+      max: Math.PI,
+      minOpen: false,
+      maxOpen: false,
+    })
+    expect(getFunctionDefinition('arctan').inverseRelation?.restrictionBounds).toEqual({
+      min: -Math.PI / 2,
+      max: Math.PI / 2,
+      minOpen: true,
+      maxOpen: true,
+    })
+    expect(getFunctionDefinition('arccot').inverseRelation?.restrictionBounds).toEqual({
+      min: 0,
+      max: Math.PI,
+      minOpen: true,
+      maxOpen: true,
+    })
+  })
 })
