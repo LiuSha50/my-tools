@@ -6,14 +6,25 @@ import {
 } from './usePlotViewport'
 
 describe('绘图视口', () => {
-  test('缩放时请求的数据点保持在相同的相对位置', () => {
+  test('缩放时非中心锚点保持在相同的相对位置', () => {
     const viewport = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 }
 
     expect(zoomViewport(viewport, 2, { x: 2, y: -3 })).toEqual({
-      xMin: -3,
-      xMax: 7,
-      yMin: -8,
-      yMax: 2,
+      xMin: -4,
+      xMax: 6,
+      yMin: -6.5,
+      yMax: 3.5,
+    })
+  })
+
+  test('缩放跨度被钳制时仍保留锚点比例', () => {
+    const viewport = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 }
+
+    expect(zoomViewport(viewport, 1e9, { x: 2, y: -3 })).toEqual({
+      xMin: 1.99994,
+      xMax: 2.00004,
+      yMin: -3.000035,
+      yMax: -2.999935,
     })
   })
 

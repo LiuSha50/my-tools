@@ -34,14 +34,18 @@ export function zoomViewport(
     return viewport
   }
 
-  const xSpan = clampSpan((viewport.xMax - viewport.xMin) / factor)
-  const ySpan = clampSpan((viewport.yMax - viewport.yMin) / factor)
+  const previousXSpan = viewport.xMax - viewport.xMin
+  const previousYSpan = viewport.yMax - viewport.yMin
+  const xSpan = clampSpan(previousXSpan / factor)
+  const ySpan = clampSpan(previousYSpan / factor)
+  const xAnchorRatio = (center.x - viewport.xMin) / previousXSpan
+  const yAnchorRatio = (center.y - viewport.yMin) / previousYSpan
 
   return {
-    xMin: center.x - xSpan / 2,
-    xMax: center.x + xSpan / 2,
-    yMin: center.y - ySpan / 2,
-    yMax: center.y + ySpan / 2,
+    xMin: center.x - xAnchorRatio * xSpan,
+    xMax: center.x + (1 - xAnchorRatio) * xSpan,
+    yMin: center.y - yAnchorRatio * ySpan,
+    yMax: center.y + (1 - yAnchorRatio) * ySpan,
   }
 }
 
