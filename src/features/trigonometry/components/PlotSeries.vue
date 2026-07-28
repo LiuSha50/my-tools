@@ -9,6 +9,7 @@ const props = defineProps<{
   branches: readonly SampledBranch[]
   viewport: PlotViewport
   size: PlotSize
+  clipPathId: string
 }>()
 
 const dashPatterns = {
@@ -54,20 +55,22 @@ const seriesLabel = computed(() => {
       '--series-dark-color': definition.style.darkColor,
     }"
   >
-    <path
-      v-for="(branch, index) in renderedBranches"
-      :key="branch.id"
-      :d="branch.path"
-      fill="none"
-      stroke="var(--series-color)"
-      :stroke-dasharray="dashPatterns[definition.style.pattern]"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2.25"
-      vector-effect="non-scaling-stroke"
-    >
-      <title>{{ definition.name }}（{{ definition.style.label }}），连续分支 {{ index + 1 }}</title>
-    </path>
+    <g data-series-curves :clip-path="`url(#${clipPathId})`">
+      <path
+        v-for="(branch, index) in renderedBranches"
+        :key="branch.id"
+        :d="branch.path"
+        fill="none"
+        stroke="var(--series-color)"
+        :stroke-dasharray="dashPatterns[definition.style.pattern]"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2.25"
+        vector-effect="non-scaling-stroke"
+      >
+        <title>{{ definition.name }}（{{ definition.style.label }}），连续分支 {{ index + 1 }}</title>
+      </path>
+    </g>
     <text
       v-if="seriesLabel"
       data-series-label

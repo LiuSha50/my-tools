@@ -55,6 +55,19 @@ describe('三角函数目录', () => {
     }
   })
 
+  test('arccos 的 (1, 0) 以单个点同时记录零点与最小值语义', () => {
+    const points = getFunctionDefinition('arccos').keyPoints.filter(
+      point => point.x === 1 && point.y === 0,
+    )
+
+    expect(points).toHaveLength(1)
+    expect(points[0]).toMatchObject({
+      id: 'arccos-zero-one',
+      kind: 'minimum',
+      additionalKinds: ['zero'],
+    })
+  })
+
   test('sec 和 csc 的单调区间在渐近线处分开', () => {
     expect(getFunctionDefinition('sec').increasingIntervals).toEqual([
       '(2k\\pi, \\pi/2 + 2k\\pi)',
@@ -64,6 +77,17 @@ describe('三角函数目录', () => {
       '(2k\\pi, \\pi/2 + 2k\\pi)',
       '(3\\pi/2 + 2k\\pi, 2\\pi + 2k\\pi)',
     ])
+  })
+
+  test.each([
+    ['sec', 'x = 2k\\pi', 'x = \\pi + 2k\\pi'],
+    ['csc', 'x = \\pi/2 + 2k\\pi', 'x = 3\\pi/2 + 2k\\pi'],
+  ] as const)('%s 明确无全局最值并保留局部极值', (id, localMinimumAt, localMaximumAt) => {
+    const extrema = getFunctionDefinition(id).extrema
+
+    expect(extrema).toContain('无全局最大值或最小值')
+    expect(extrema).toContain(`局部最小值 1：${localMinimumAt}`)
+    expect(extrema).toContain(`局部最大值 -1：${localMaximumAt}`)
   })
 
   test('闭定义域不会因数值容差向外扩张', () => {

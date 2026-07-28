@@ -43,6 +43,43 @@ describe('TrigonometryWorkbench', () => {
     expect(wrapper.get('table').attributes('aria-label')).toBe('所选函数性质比较')
   })
 
+  test('对应原函数限制列对三角函数显示无', () => {
+    const wrapper = mount(TrigonometryWorkbench)
+    const restrictionCell = wrapper.get('tbody td[data-label="对应原函数限制"]')
+
+    expect(wrapper.text()).toContain('对应原函数限制')
+    expect(restrictionCell.text()).toBe('无')
+    expect(restrictionCell.attributes('data-label')).toBe('对应原函数限制')
+  })
+
+  test('四个反三角函数同时直接显示 catalog 中的对应原函数限制', async () => {
+    const wrapper = mount(TrigonometryWorkbench)
+    await wrapper.get('button[data-category="inverse"]').trigger('click')
+    for (const id of ['arccos', 'arctan', 'arccot']) {
+      await wrapper.get(`input[value="${id}"]`).setValue(true)
+    }
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows).toHaveLength(4)
+    expect(rows.map(row => row.get('th').text())).toEqual([
+      expect.stringContaining('反正弦函数'),
+      expect.stringContaining('反余弦函数'),
+      expect.stringContaining('反正切函数'),
+      expect.stringContaining('反余切函数'),
+    ])
+
+    const expectedRestrictions = [
+      '[-\\pi/2, \\pi/2]',
+      '[0, \\pi]',
+      '(-\\pi/2, \\pi/2)',
+      '(0, \\pi)',
+    ]
+    expect(rows.map(row => row.get('td[data-label="对应原函数限制"] [role="math"]')
+      .attributes('aria-label'))).toEqual(expectedRestrictions.map((restriction, index) =>
+      expect.stringContaining(`对应原函数限制1：${restriction}`),
+    ))
+  })
+
   test('目录中的中英混合性质以安全公式呈现且不产生 KaTeX 警告', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 

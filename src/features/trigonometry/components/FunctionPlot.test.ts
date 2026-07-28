@@ -36,6 +36,62 @@ afterEach(() => {
 })
 
 describe('FunctionPlot', () => {
+  test('曲线子组引用严格覆盖绘图区 padding 边界的实例级 clipPath', async () => {
+    const wrapper = mount(FunctionPlot, {
+      props: {
+        functionIds: ['tan', 'cot', 'sec', 'csc'],
+        category: 'trig',
+        markerVisibility,
+      },
+    })
+    await wrapper.vm.$nextTick()
+
+    const clipPath = wrapper.get('defs clipPath[data-plot-series-clip]')
+    const clipId = clipPath.attributes('id')
+    expect(clipId).toBeTruthy()
+    expect(clipPath.get('rect').attributes()).toMatchObject({
+      x: '54',
+      y: '22',
+      width: '722',
+      height: '356',
+    })
+
+    for (const id of ['tan', 'cot', 'sec', 'csc']) {
+      const series = wrapper.get(`[data-series="${id}"]`)
+      expect(series.get('[data-series-curves]').attributes('clip-path')).toBe(`url(#${clipId})`)
+      expect(series.get('[data-series-label]').element.closest('[clip-path]')).toBeNull()
+    }
+    expect(wrapper.get('[data-axis="x"]').element.closest('[clip-path]')).toBeNull()
+    expect(wrapper.get('[data-axis="y"]').element.closest('[clip-path]')).toBeNull()
+  })
+
+  test('同一 SSR 页面中的 clipPath ID 唯一且重复渲染稳定', async () => {
+    const PlotPair = defineComponent({
+      setup: () => () => h('main', [
+        h(FunctionPlot, {
+          functionIds: ['tan'],
+          category: 'trig',
+          markerVisibility,
+        }),
+        h(FunctionPlot, {
+          functionIds: ['cot'],
+          category: 'trig',
+          markerVisibility,
+        }),
+      ]),
+    })
+    const renderPair = () => renderToString(createSSRApp(PlotPair))
+
+    const first = await renderPair()
+    const second = await renderPair()
+    const firstIds = [...first.matchAll(/<clipPath[^>]+id="([^"]+)"/g)].map(match => match[1])
+    const secondIds = [...second.matchAll(/<clipPath[^>]+id="([^"]+)"/g)].map(match => match[1])
+
+    expect(firstIds).toHaveLength(2)
+    expect(new Set(firstIds).size).toBe(2)
+    expect(secondIds).toEqual(firstIds)
+  })
+
   test('tan 渲染多个独立 path 和渐近线', async () => {
     const wrapper = mount(FunctionPlot, {
       props: {
@@ -359,6 +415,54 @@ describe('FunctionPlot', () => {
     expect(wrapper.findAll('[data-marker-kind="maximum"]')).toHaveLength(1)
     expect(wrapper.get('[data-marker-kind="maximum"] title').text()).toContain('正弦函数')
     expect(wrapper.get('[data-marker-kind="maximum"] title').text()).toContain('π/2')
+  })
+
+  test('arccos 的 (1, 0) 响应零点和极值开关且始终只绘制一次', async () => {
+    vi.stubGlobal('ResizeObserver', undefined)
+    const wrapper = mount(FunctionPlot, {
+      props: {
+        functionIds: ['arccos'],
+        category: 'inverse',
+        markerVisibility: {
+          ...markerVisibility,
+          zeros: true,
+          extrema: false,
+        },
+      },
+    })
+    const targetMarkers = () => wrapper.findAll('[data-plot-marker]').filter(
+      marker => marker.get('title').text().includes('反余弦函数：(1, 0)'),
+    )
+    await wrapper.vm.$nextTick()
+
+    expect(targetMarkers()).toHaveLength(1)
+
+    await wrapper.setProps({
+      markerVisibility: {
+        ...markerVisibility,
+        zeros: false,
+        extrema: true,
+      },
+    })
+    expect(targetMarkers()).toHaveLength(1)
+
+    await wrapper.setProps({
+      markerVisibility: {
+        ...markerVisibility,
+        zeros: true,
+        extrema: true,
+      },
+    })
+    expect(targetMarkers()).toHaveLength(1)
+
+    await wrapper.setProps({
+      markerVisibility: {
+        ...markerVisibility,
+        zeros: false,
+        extrema: false,
+      },
+    })
+    expect(targetMarkers()).toHaveLength(0)
   })
 
   test('关键点、零点与极值标记都传递 catalog 浅色和深色并通过主题变量着色', async () => {

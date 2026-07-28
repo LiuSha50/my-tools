@@ -23,6 +23,15 @@ const propertyColumns: readonly PropertyColumn[] = [
     label: '主值范围',
     values: definition => definition.principalRange ? [definition.principalRange] : [],
   },
+  {
+    key: 'original-restriction',
+    label: '对应原函数限制',
+    values: definition => (
+      definition.category === 'inverse' && definition.inverseRelation
+        ? [definition.inverseRelation.restriction]
+        : []
+    ),
+  },
   { key: 'parity', label: '奇偶性', values: definition => [definition.parity] },
   {
     key: 'increasing',

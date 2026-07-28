@@ -13,7 +13,7 @@ import {
 } from '../plotting/coordinates'
 import { formatPiMultiple } from '../plotting/piFormatting'
 import { sampleFunctionBranches } from '../plotting/sampling'
-import type { MainFunctionId, MathPoint } from '../types'
+import type { MainFunctionId, MathPoint, MathPointKind } from '../types'
 import PlotAxes from './PlotAxes.vue'
 import PlotMarkers from './PlotMarkers.vue'
 import PlotSeries from './PlotSeries.vue'
@@ -70,6 +70,7 @@ const PADDING = { top: 22, right: 24, bottom: 42, left: 54 }
 const plotInstanceId = useId()
 const plotTitleId = `function-plot-${plotInstanceId}-title`
 const plotDescriptionId = `function-plot-${plotInstanceId}-description`
+const plotSeriesClipId = `function-plot-${plotInstanceId}-series-clip`
 const container = ref<HTMLElement | null>(null)
 const svgElement = ref<SVGSVGElement | null>(null)
 const measuredSize = ref({ width: 0, height: 0 })
@@ -96,6 +97,12 @@ const hasPositivePlotSize = computed(() => (
   size.value.width > PADDING.left + PADDING.right
   && size.value.height > PADDING.top + PADDING.bottom
 ))
+const plotArea = computed(() => ({
+  x: PADDING.left,
+  y: PADDING.top,
+  width: Math.max(0, size.value.width - PADDING.left - PADDING.right),
+  height: Math.max(0, size.value.height - PADDING.top - PADDING.bottom),
+}))
 
 const sampledSeries = computed(() => new Map(definitions.value.map(definition => [
   definition.id,
@@ -175,10 +182,14 @@ const visibleAsymptotes = computed<PlotAsymptote[]>(() => {
   return result
 })
 
-function isMarkerEnabled(point: MathPoint): boolean {
-  if (point.kind === 'zero') return props.markerVisibility.zeros
-  if (point.kind === 'maximum' || point.kind === 'minimum') return props.markerVisibility.extrema
+function isMarkerKindEnabled(kind: MathPointKind): boolean {
+  if (kind === 'zero') return props.markerVisibility.zeros
+  if (kind === 'maximum' || kind === 'minimum') return props.markerVisibility.extrema
   return props.markerVisibility.keyPoints
+}
+
+function isMarkerEnabled(point: MathPoint): boolean {
+  return [point.kind, ...(point.additionalKinds ?? [])].some(isMarkerKindEnabled)
 }
 
 const visibleMarkers = computed<PlotMarkerEntry[]>(() => definitions.value.flatMap(definition => (
@@ -521,6 +532,16 @@ onBeforeUnmount(() => {
       >
         <title :id="plotTitleId">{{ plotTitle }}</title>
         <desc :id="plotDescriptionId">显示所选函数、坐标轴、关键点与渐近线。</desc>
+        <defs>
+          <clipPath :id="plotSeriesClipId" data-plot-series-clip>
+            <rect
+              :x="plotArea.x"
+              :y="plotArea.y"
+              :width="plotArea.width"
+              :height="plotArea.height"
+            />
+          </clipPath>
+        </defs>
         <template v-if="hasPositivePlotSize">
           <PlotAxes
             :category="category"
@@ -535,6 +556,7 @@ onBeforeUnmount(() => {
             :branches="sampledSeries.get(definition.id) ?? []"
             :viewport="viewport"
             :size="size"
+            :clip-path-id="plotSeriesClipId"
           />
           <PlotMarkers
             :markers="visibleMarkers"

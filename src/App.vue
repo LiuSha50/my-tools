@@ -1,5 +1,5 @@
 <template>
-  <div id="app" :class="{ 'app-wide': route.meta.layout === 'wide' }">
+  <div class="app-shell" :class="{ 'app-wide': route.meta.layout === 'wide' }">
     <router-view />
   </div>
 </template>
@@ -11,13 +11,13 @@ const route = useRoute()
 </script>
 
 <style>
-#app {
+.app-shell {
   max-width: 960px;
   margin: 0 auto;
   padding: calc(var(--spacing-unit) * 4) calc(var(--spacing-unit) * 2);
 }
 
-.app-wide {
+.app-shell.app-wide {
   max-width: 1280px;
 }
 </style>

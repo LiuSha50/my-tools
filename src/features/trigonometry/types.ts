@@ -7,6 +7,7 @@ export type MainFunctionId = Exclude<FunctionId, 'arcsec' | 'arccsc'>
 export type FunctionCategory = 'trig' | 'inverse' | 'supplement'
 export type LinePattern = 'solid' | 'dashed' | 'dash-dot' | 'dotted'
 export type IntervalText = string
+export type MathPointKind = 'key' | 'zero' | 'maximum' | 'minimum'
 
 export interface MathPoint {
   id: string
@@ -14,7 +15,8 @@ export interface MathPoint {
   y: number
   xLabel: string
   yLabel: string
-  kind: 'key' | 'zero' | 'maximum' | 'minimum'
+  kind: MathPointKind
+  additionalKinds?: readonly MathPointKind[]
 }
 
 export interface InverseRelation {
