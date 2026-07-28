@@ -13,7 +13,12 @@ interface RelationPoint {
 
 interface EndpointMarker extends RelationPoint {
   side: 'min' | 'max'
-  kind: 'open' | 'closed'
+  kind: 'closed'
+}
+
+interface DomainBoundaryAnnotation {
+  side: 'min' | 'max'
+  x: number
 }
 
 const SVG_SIZE = 480
@@ -54,19 +59,12 @@ const originalPoints = computed(() => sampleRestrictedOriginal(
   originalDefinition.value.evaluate,
   originalDefinition.value.isDefined,
   relation.value,
-))
+).filter(isInsideSquare))
 
-const inversePoints = computed(() => {
-  const domain = getVisibleInverseDomain(relation.value)
-  return sampleRange(
-    inverseDefinition.value.evaluate,
-    inverseDefinition.value.isDefined,
-    domain.min,
-    domain.max,
-    false,
-    false,
-  )
-})
+const inversePoints = computed(() => originalPoints.value.map(point => ({
+  x: point.y,
+  y: point.x,
+})))
 
 const originalPath = computed(() => pointsToPath(originalPoints.value))
 const inversePath = computed(() => pointsToPath(inversePoints.value))
@@ -74,6 +72,13 @@ const originalEndpoints = computed(() => getEndpointMarkers(
   originalPoints.value,
   relation.value,
 ))
+const openDomainBoundaries = computed<DomainBoundaryAnnotation[]>(() => {
+  const { min, max, minOpen, maxOpen } = relation.value.restrictionBounds
+  const boundaries: DomainBoundaryAnnotation[] = []
+  if (minOpen) boundaries.push({ side: 'min', x: min })
+  if (maxOpen) boundaries.push({ side: 'max', x: max })
+  return boundaries
+})
 
 function requireInverseRelation(value: InverseRelation | undefined): InverseRelation {
   if (!value) throw new Error('反函数目录项缺少对应关系')
@@ -82,6 +87,13 @@ function requireInverseRelation(value: InverseRelation | undefined): InverseRela
 
 function toReadableMath(value: string): string {
   return value.replaceAll('\\pi', 'π').replaceAll('\\', '')
+}
+
+function seriesColorStyle(style: { color: string; darkColor: string }): Record<string, string> {
+  return {
+    '--series-light-color': style.color,
+    '--series-dark-color': style.darkColor,
+  }
 }
 
 function selectPair(event: Event): void {
@@ -125,21 +137,11 @@ function sampleRange(
   return points
 }
 
-function getVisibleInverseDomain(pairRelation: InverseRelation): { min: number; max: number } {
-  const original = getFunctionDefinition(pairRelation.originalId)
-  const bounds = pairRelation.restrictionBounds
-
-  if (!bounds.minOpen && !bounds.maxOpen) {
-    const endpointValues = [original.evaluate(bounds.min), original.evaluate(bounds.max)]
-    if (endpointValues.every(Number.isFinite)) {
-      return {
-        min: Math.min(...endpointValues),
-        max: Math.max(...endpointValues),
-      }
-    }
-  }
-
-  return { min: DATA_MIN, max: DATA_MAX }
+function isInsideSquare(point: RelationPoint): boolean {
+  return point.x >= DATA_MIN
+    && point.x <= DATA_MAX
+    && point.y >= DATA_MIN
+    && point.y <= DATA_MAX
 }
 
 function toSvgX(x: number): number {
@@ -162,26 +164,16 @@ function getEndpointMarkers(
   points: readonly RelationPoint[],
   pairRelation: InverseRelation,
 ): EndpointMarker[] {
-  const visiblePoints = points.filter(point => (
-    point.x >= DATA_MIN
-    && point.x <= DATA_MAX
-    && point.y >= DATA_MIN
-    && point.y <= DATA_MAX
-  ))
-  if (visiblePoints.length === 0) return []
+  if (points.length === 0) return []
 
-  return [
-    {
-      ...visiblePoints[0],
-      side: 'min',
-      kind: pairRelation.restrictionBounds.minOpen ? 'open' : 'closed',
-    },
-    {
-      ...visiblePoints.at(-1)!,
-      side: 'max',
-      kind: pairRelation.restrictionBounds.maxOpen ? 'open' : 'closed',
-    },
-  ]
+  const markers: EndpointMarker[] = []
+  if (!pairRelation.restrictionBounds.minOpen) {
+    markers.push({ ...points[0], side: 'min', kind: 'closed' })
+  }
+  if (!pairRelation.restrictionBounds.maxOpen) {
+    markers.push({ ...points.at(-1)!, side: 'max', kind: 'closed' })
+  }
+  return markers
 }
 </script>
 
@@ -265,21 +257,49 @@ function getEndpointMarkers(
             <path
               v-if="showOriginal"
               data-series="original"
-              data-sampling-source="restriction-bounds"
+              data-sampling-source="shared-relation-points"
               :data-sampled-min-x="originalPoints[0]?.x"
               :data-sampled-max-x="originalPoints.at(-1)?.x"
               :d="originalPath"
-              :stroke="originalDefinition.style.color"
+              :style="seriesColorStyle(originalDefinition.style)"
             />
             <path
               v-if="showInverse"
               data-series="inverse"
-              data-sampling-source="inverse-domain"
+              data-sampling-source="reflected-relation-points"
               :data-sampled-min-x="inversePoints[0]?.x"
               :data-sampled-max-x="inversePoints.at(-1)?.x"
               :d="inversePath"
-              :stroke="inverseDefinition.style.color"
+              :style="seriesColorStyle(inverseDefinition.style)"
             />
+
+            <g
+              v-for="boundary in showOriginal ? openDomainBoundaries : []"
+              :key="`domain-boundary-${boundary.side}`"
+              data-domain-boundary="original"
+              data-boundary-kind="open"
+              data-represents="domain-boundary-not-function-point"
+              :data-boundary-value="boundary.x"
+              role="img"
+              :aria-label="`${boundary.side === 'min' ? '左侧' : '右侧'}开放定义域边界 ${readableRestriction}；这是定义域边界轨道，不是函数坐标`"
+            >
+              <title>
+                {{ boundary.side === 'min' ? '左侧' : '右侧' }}开放定义域边界；不是函数坐标
+              </title>
+              <line
+                class="domain-boundary-track"
+                :x1="toSvgX(boundary.x)"
+                :x2="toSvgX(boundary.x)"
+                :y1="toSvgY(DATA_MIN + 0.15)"
+                :y2="toSvgY(DATA_MIN + 0.65)"
+              />
+              <text
+                class="domain-boundary-label"
+                :x="toSvgX(boundary.x)"
+                :y="toSvgY(DATA_MIN + 0.78)"
+                text-anchor="middle"
+              >开</text>
+            </g>
 
             <circle
               v-for="endpoint in showOriginal ? originalEndpoints : []"
@@ -289,8 +309,7 @@ function getEndpointMarkers(
               :cx="toSvgX(endpoint.x)"
               :cy="toSvgY(endpoint.y)"
               r="5"
-              :fill="endpoint.kind === 'open' ? 'none' : originalDefinition.style.color"
-              :stroke="originalDefinition.style.color"
+              :style="seriesColorStyle(originalDefinition.style)"
               stroke-width="2.5"
             />
           </g>
@@ -461,6 +480,7 @@ svg {
 
 [data-series] {
   fill: none;
+  stroke: var(--series-light-color);
   stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -468,6 +488,23 @@ svg {
 
 [data-series="inverse"] {
   stroke-dasharray: 9 5;
+}
+
+[data-series-endpoint] {
+  fill: var(--series-light-color);
+  stroke: var(--series-light-color);
+}
+
+.domain-boundary-track {
+  stroke: var(--color-text-muted, #6b7280);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+
+.domain-boundary-label {
+  fill: var(--color-text-muted, #6b7280);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .relation-details {
@@ -536,6 +573,17 @@ select:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--color-primary, #2563eb);
   outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-series] {
+    stroke: var(--series-dark-color);
+  }
+
+  [data-series-endpoint] {
+    fill: var(--series-dark-color);
+    stroke: var(--series-dark-color);
+  }
 }
 
 @media (max-width: 780px) {

@@ -4,6 +4,13 @@ import { describe, expect, test } from 'vitest'
 import { getFunctionDefinition } from '../catalog'
 import InverseRelationPanel from './InverseRelationPanel.vue'
 
+function parsePathPoints(path: string): Array<{ x: number; y: number }> {
+  return Array.from(path.matchAll(/[ML] (-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g), match => ({
+    x: Number(match[1]),
+    y: Number(match[2]),
+  }))
+}
+
 describe('InverseRelationPanel', () => {
   test('三个显示开关彼此独立', async () => {
     const wrapper = mount(InverseRelationPanel)
@@ -70,22 +77,26 @@ describe('InverseRelationPanel', () => {
   })
 
   test.each(['arctan', 'arccot'] as const)(
-    '%s 的开区间端点不采到渐近线上且使用空心标记',
+    '%s 不把内部采样点伪装成开放端点并单独标注定义域边界',
     async id => {
       const wrapper = mount(InverseRelationPanel)
       await wrapper.get('select').setValue(id)
       const relation = getFunctionDefinition(id).inverseRelation
       const path = wrapper.get('[data-series="original"]')
       const endpoints = wrapper.findAll('[data-series-endpoint="original"]')
+      const boundaries = wrapper.findAll('[data-domain-boundary="original"]')
 
       expect(Number(path.attributes('data-sampled-min-x')))
         .toBeGreaterThan(relation?.restrictionBounds.min ?? Number.POSITIVE_INFINITY)
       expect(Number(path.attributes('data-sampled-max-x')))
         .toBeLessThan(relation?.restrictionBounds.max ?? Number.NEGATIVE_INFINITY)
-      expect(endpoints).toHaveLength(2)
-      for (const endpoint of endpoints) {
-        expect(endpoint.attributes('data-endpoint-kind')).toBe('open')
-        expect(endpoint.attributes('fill')).toBe('none')
+      expect(endpoints).toHaveLength(0)
+      expect(boundaries).toHaveLength(2)
+      for (const boundary of boundaries) {
+        expect(boundary.attributes('data-boundary-kind')).toBe('open')
+        expect(boundary.attributes('data-represents')).toBe('domain-boundary-not-function-point')
+        expect(boundary.attributes('aria-label')).toContain('开放定义域边界')
+        expect(boundary.attributes('aria-label')).toContain('不是函数坐标')
       }
     },
   )
@@ -105,18 +116,50 @@ describe('InverseRelationPanel', () => {
     },
   )
 
-  test('受限原函数和反函数分别采样且路径不含非有限坐标', async () => {
+  test('反函数路径由共同可见关系点逐点交换坐标生成', async () => {
     const wrapper = mount(InverseRelationPanel)
 
     for (const id of ['arcsin', 'arccos', 'arctan', 'arccot']) {
       await wrapper.get('select').setValue(id)
       const original = wrapper.get('[data-series="original"]')
       const inverse = wrapper.get('[data-series="inverse"]')
+      const originalPoints = parsePathPoints(original.attributes('d') ?? '')
+      const inversePoints = parsePathPoints(inverse.attributes('d') ?? '')
 
-      expect(original.attributes('data-sampling-source')).toBe('restriction-bounds')
-      expect(inverse.attributes('data-sampling-source')).toBe('inverse-domain')
+      expect(original.attributes('data-sampling-source')).toBe('shared-relation-points')
+      expect(inverse.attributes('data-sampling-source')).toBe('reflected-relation-points')
       expect(original.attributes('d')).not.toMatch(/NaN|Infinity/)
       expect(inverse.attributes('d')).not.toMatch(/NaN|Infinity/)
+      expect(originalPoints.length).toBeGreaterThan(2)
+      expect(inversePoints).toHaveLength(originalPoints.length)
+
+      for (const [index, originalPoint] of originalPoints.entries()) {
+        const inversePoint = inversePoints[index]
+        expect(inversePoint?.x).toBeCloseTo(480 - originalPoint.y, 2)
+        expect(inversePoint?.y).toBeCloseTo(480 - originalPoint.x, 2)
+      }
+    }
+  })
+
+  test('曲线主题变量同时消费 catalog 的浅色与深色颜色', async () => {
+    const wrapper = mount(InverseRelationPanel)
+
+    for (const id of ['arcsin', 'arccos', 'arctan', 'arccot'] as const) {
+      await wrapper.get('select').setValue(id)
+      const inverse = getFunctionDefinition(id)
+      const relation = inverse.inverseRelation
+      const original = getFunctionDefinition(relation!.originalId)
+      const originalPath = wrapper.get<SVGPathElement>('[data-series="original"]')
+      const inversePath = wrapper.get<SVGPathElement>('[data-series="inverse"]')
+
+      expect(originalPath.element.style.getPropertyValue('--series-light-color'))
+        .toBe(original.style.color)
+      expect(originalPath.element.style.getPropertyValue('--series-dark-color'))
+        .toBe(original.style.darkColor)
+      expect(inversePath.element.style.getPropertyValue('--series-light-color'))
+        .toBe(inverse.style.color)
+      expect(inversePath.element.style.getPropertyValue('--series-dark-color'))
+        .toBe(inverse.style.darkColor)
     }
   })
 })
