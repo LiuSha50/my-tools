@@ -11,6 +11,9 @@ importers:
       katex:
         specifier: ^0.18.1
         version: 0.18.1
+      json5:
+        specifier: ^2.2.3
+        version: 2.2.3
       lunar-javascript:
         specifier: ^1.7.7
         version: 1.7.7
@@ -541,6 +544,11 @@ packages:
 
   katex@0.18.1:
     resolution: {integrity: sha512-Td8GCYSxDAoMhHOlKmCFMJ/hz5qlAAb71n66Dryw9nfCVfumLo7nhuotbvKom/XPADmrYC3O5QR71EPq4DarJQ==}
+    hasBin: true
+
+  json5@2.2.3:
+    resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
+    engines: {node: '>=6'}
     hasBin: true
 
   lightningcss-android-arm64@1.32.0:
@@ -1432,6 +1440,8 @@ snapshots:
   katex@0.18.1:
     dependencies:
       commander: 8.3.0
+
+  json5@2.2.3: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true

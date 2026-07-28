@@ -9,12 +9,13 @@ import unicode from './encoding/unicode'
 import caseConverter from './text/case'
 import timestamp from './text/timestamp'
 import trigonometry from './math/trigonometry'
+import jsonFormat from './text/jsonFormat'
 
 export const tools = [
   aes, des, rsa,
   md5, sha,
   base64, urlTool, unicode,
-  caseConverter, timestamp,
+  caseConverter, timestamp, jsonFormat,
   trigonometry
 ]
 

@@ -38,6 +38,16 @@
           class="option-input"
           step="1"
         />
+
+        <label v-else-if="opt.type === 'switch'" class="option-switch">
+          <input
+            v-model="optionValues[opt.key]"
+            type="checkbox"
+            class="option-switch-input"
+            :aria-label="opt.label"
+          />
+          <span>{{ optionValues[opt.key] ? '开启' : '关闭' }}</span>
+        </label>
       </div>
     </div>
 
@@ -219,6 +229,27 @@ async function execute(mode) {
 .option-select:focus,
 .option-input:focus {
   border-color: var(--color-primary);
+}
+
+.option-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  cursor: pointer;
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.option-switch-input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-primary);
+}
+
+.option-switch-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .action-bar {
