@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { mount } from '@vue/test-utils'
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createRouter, createWebHashHistory, RouterLink } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { functionCatalog } from '../features/trigonometry/catalog'
 import TrigonometryView from './TrigonometryView.vue'
@@ -9,6 +9,9 @@ interface MediaQueryHarness {
   dispatch(matches: boolean): void
   listenerCount(): number
 }
+
+const mountedPages: Array<{ unmount(): void }> = []
+const routerHistories: Array<ReturnType<typeof createWebHashHistory>> = []
 
 function installStorageHarness() {
   const values = new Map<string, string>()
@@ -61,8 +64,10 @@ function mountPage() {
 }
 
 async function mountPageWithRouter() {
+  const history = createWebHashHistory('/my-tools/')
+  routerHistories.push(history)
   const router = createRouter({
-    history: createWebHashHistory('/my-tools/'),
+    history,
     routes: [
       { path: '/', component: { template: '<div />' } },
       { path: '/tool/trigonometry', component: TrigonometryView },
@@ -71,15 +76,26 @@ async function mountPageWithRouter() {
   await router.push('/tool/trigonometry')
   await router.isReady()
 
-  return {
-    router,
-    wrapper: mount(TrigonometryView, {
-      attachTo: document.body,
-      global: {
-        plugins: [router],
-      },
-    }),
-  }
+  const wrapper = mount(TrigonometryView, {
+    attachTo: document.body,
+    global: {
+      plugins: [router],
+    },
+  })
+  mountedPages.push(wrapper)
+
+  return { router, wrapper }
+}
+
+async function dispatchAnchorClick(element: Element, init: MouseEventInit = {}) {
+  window.addEventListener('click', event => event.preventDefault(), { once: true })
+  element.dispatchEvent(new MouseEvent('click', {
+    bubbles: true,
+    cancelable: true,
+    button: 0,
+    ...init,
+  }))
+  await flushPromises()
 }
 
 beforeEach(() => {
@@ -88,6 +104,9 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  mountedPages.splice(0).forEach(wrapper => wrapper.unmount())
+  routerHistories.splice(0).forEach(history => history.destroy())
+  window.history.replaceState({}, '', '/')
   document.body.innerHTML = ''
   vi.unstubAllGlobals()
 })
@@ -108,38 +127,83 @@ describe('TrigonometryView', () => {
 
     expect(wrapper.find('main').attributes('data-theme')).toBe('light')
     expect(wrapper.findAll('main > section').map(section => section.attributes('id'))).toEqual(orderedIds)
-    expect(wrapper.findAll('[data-page-anchor]').map(link => link.text())).toEqual([
-      '交互图像',
-      '三角函数',
-      '反三角函数',
-      '反函数关系',
-      '易错点',
-      '补充内容',
-      '符号说明',
-    ])
     expect(wrapper.text()).toContain('默认采用弧度制')
     expect(wrapper.text()).toContain('k ∈ Z')
     expect(wrapper.text()).toContain('arccot 主值范围采用 (0, π)')
   })
 
-  test('页内目录链接保留三角函数手册路由并附加目标片段', async () => {
+  test('七个页内目录项精确映射文本、to 和 hash history href', async () => {
     installBrowserHarness()
     const { wrapper } = await mountPageWithRouter()
-
-    expect(wrapper.get('[data-page-anchor]').attributes('href')).toContain(
-      '#/tool/trigonometry#workbench',
+    const links = wrapper.findAllComponents(RouterLink).filter(
+      link => link.attributes('data-page-anchor') !== undefined,
     )
+
+    expect(links.map(link => ({
+      text: link.text(),
+      to: link.props('to'),
+      href: link.attributes('href'),
+    }))).toEqual([
+      { text: '交互图像', to: { hash: '#workbench' }, href: '#/tool/trigonometry#workbench' },
+      { text: '三角函数', to: { hash: '#trig-properties' }, href: '#/tool/trigonometry#trig-properties' },
+      { text: '反三角函数', to: { hash: '#inverse-properties' }, href: '#/tool/trigonometry#inverse-properties' },
+      { text: '反函数关系', to: { hash: '#inverse-relation' }, href: '#/tool/trigonometry#inverse-relation' },
+      { text: '易错点', to: { hash: '#mistakes' }, href: '#/tool/trigonometry#mistakes' },
+      { text: '补充内容', to: { hash: '#supplement' }, href: '#/tool/trigonometry#supplement' },
+      { text: '符号说明', to: { hash: '#symbols' }, href: '#/tool/trigonometry#symbols' },
+    ])
   })
 
-  test('点击页内目录时滚动到对应分区', async () => {
+  test.each([
+    ['普通左键 click', { button: 0, detail: 1 }],
+    ['Enter 合成的 click', { button: 0, detail: 0 }],
+  ])('%s 滚动到对应分区、更新路由 hash 且保留链接焦点', async (_name, eventInit) => {
     installBrowserHarness()
-    const { wrapper } = await mountPageWithRouter()
+    const { router, wrapper } = await mountPageWithRouter()
+    const scrollIntoView = vi.fn()
+    wrapper.get('#workbench').element.scrollIntoView = scrollIntoView
+    const anchor = wrapper.get('[data-page-anchor]')
+    const anchorElement = anchor.element as HTMLElement
+    anchorElement.focus()
+
+    await dispatchAnchorClick(anchorElement, eventInit)
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' })
+    expect(router.currentRoute.value.hash).toBe('#workbench')
+    expect(document.activeElement).toBe(anchorElement)
+  })
+
+  test.each([
+    ['Meta click', { metaKey: true }],
+    ['Ctrl click', { ctrlKey: true }],
+    ['Alt click', { altKey: true }],
+    ['Shift click', { shiftKey: true }],
+    ['中键 click', { button: 1 }],
+    ['右键 click', { button: 2 }],
+  ])('%s 不滚动或改写当前路由', async (_name, eventInit) => {
+    installBrowserHarness()
+    const { router, wrapper } = await mountPageWithRouter()
     const scrollIntoView = vi.fn()
     wrapper.get('#workbench').element.scrollIntoView = scrollIntoView
 
-    await wrapper.get('[data-page-anchor]').trigger('click')
+    await dispatchAnchorClick(wrapper.get('[data-page-anchor]').element, eventInit)
 
-    expect(scrollIntoView).toHaveBeenCalledOnce()
+    expect(scrollIntoView).not.toHaveBeenCalled()
+    expect(router.currentRoute.value.hash).toBe('')
+  })
+
+  test('target=_blank 的目录激活不滚动或改写当前路由', async () => {
+    installBrowserHarness()
+    const { router, wrapper } = await mountPageWithRouter()
+    const scrollIntoView = vi.fn()
+    wrapper.get('#workbench').element.scrollIntoView = scrollIntoView
+    const anchor = wrapper.get('[data-page-anchor]')
+    anchor.element.setAttribute('target', '_blank')
+
+    await dispatchAnchorClick(anchor.element)
+
+    expect(scrollIntoView).not.toHaveBeenCalled()
+    expect(router.currentRoute.value.hash).toBe('')
   })
 
   test('完整性质分区从 catalog 呈现十个主要函数且补充区只含 arcsec 和 arccsc', () => {

@@ -23,7 +23,17 @@ const pageAnchors = [
   { id: 'symbols', label: '符号说明' },
 ] as const
 
-function scrollToPageAnchor(id: string) {
+function scrollToPageAnchor(id: string, event: MouseEvent) {
+  const anchor = event.currentTarget as HTMLAnchorElement | null
+  if (
+    event.button !== 0
+    || event.metaKey
+    || event.ctrlKey
+    || event.altKey
+    || event.shiftKey
+    || anchor?.target.toLowerCase() === '_blank'
+  ) return
+
   document.getElementById(id)?.scrollIntoView({ block: 'start' })
 }
 
@@ -72,7 +82,7 @@ function scrollToPageAnchor(id: string) {
         :key="anchor.id"
         data-page-anchor
         :to="{ hash: `#${anchor.id}` }"
-        @click="scrollToPageAnchor(anchor.id)"
+        @click="scrollToPageAnchor(anchor.id, $event)"
       >
         {{ anchor.label }}
       </RouterLink>
