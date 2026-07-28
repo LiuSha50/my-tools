@@ -105,7 +105,7 @@ function onFunctionChange(event: Event, id: MainFunctionId) {
             <span class="function-option__name">{{ definition.name }}</span>
             <MathFormula
               :formula="definition.formula"
-              :label="`${definition.name}公式`"
+              :label="`${definition.name}公式：${definition.formula}`"
             />
           </span>
         </label>

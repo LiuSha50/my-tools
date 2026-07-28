@@ -75,12 +75,42 @@ describe('TrigonometryWorkbench', () => {
     expect(sin.attributes('id')).toBe('trigonometry-function-sin')
     expect(label.find('[data-function-swatch]').exists()).toBe(true)
     expect(label.find('[data-line-pattern]').attributes('data-pattern')).toBe('solid')
-    expect(label.get('[role="math"]').attributes('aria-label')).toContain('正弦函数')
+    const selectorFormulaLabel = label.get('[role="math"]').attributes('aria-label')
+    expect(selectorFormulaLabel).toContain('正弦函数公式')
+    expect(selectorFormulaLabel).toContain('y = \\sin x')
 
     const markerButton = selector.get('button[data-marker="zeros"]')
     expect(markerButton.attributes('aria-pressed')).toBe('true')
     await markerButton.trigger('click')
     expect(markerButton.attributes('aria-pressed')).toBe('false')
+  })
+
+  test('性质公式的可访问名称同时包含上下文与实际目录值', () => {
+    const wrapper = mount(TrigonometryWorkbench)
+    const rowFormulaLabel = wrapper.get('tbody th[scope="row"] [role="math"]')
+      .attributes('aria-label')
+    const domainFormulaLabel = wrapper.get('tbody td[data-label="定义域"] [role="math"]')
+      .attributes('aria-label')
+
+    expect(rowFormulaLabel).toContain('正弦函数公式')
+    expect(rowFormulaLabel).toContain('y = \\sin x')
+    expect(domainFormulaLabel).toContain('正弦函数定义域1')
+    expect(domainFormulaLabel).toContain('\\mathbb{R}')
+  })
+
+  test('每个性质值都有宽度约束和局部横向滚动容器', () => {
+    const wrapper = mount(TrigonometryWorkbench)
+    const propertyValues = wrapper.findAll('tbody td [role="math"]')
+
+    expect(propertyValues.length).toBeGreaterThan(0)
+    for (const value of propertyValues) {
+      const scrollContainer = value.element.closest<HTMLElement>('[data-property-value-scroll]')
+      expect(scrollContainer).not.toBeNull()
+      expect(scrollContainer?.style.minWidth).toBe('0px')
+      expect(scrollContainer?.style.maxWidth).toBe('100%')
+      expect(scrollContainer?.style.overflowX).toBe('auto')
+      expect(scrollContainer?.style.overflowY).toBe('hidden')
+    }
   })
 
   test('切换类别时分别保留三角函数与反三角函数选择', async () => {

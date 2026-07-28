@@ -74,6 +74,14 @@ const propertyColumns: readonly PropertyColumn[] = [
   },
 ]
 
+const propertyValueScrollStyle = {
+  display: 'block',
+  minWidth: '0px',
+  maxWidth: '100%',
+  overflowX: 'auto',
+  overflowY: 'hidden',
+} as const
+
 function toFormula(value: string): string {
   return value.replace(
     /([\p{Script=Han}，。：；、]+)/gu,
@@ -105,7 +113,7 @@ function toFormula(value: string): string {
               <strong>{{ definition.name }}</strong>
               <MathFormula
                 :formula="definition.formula"
-                :label="`${definition.name}公式`"
+                :label="`${definition.name}公式：${definition.formula}`"
               />
             </th>
             <td
@@ -114,13 +122,19 @@ function toFormula(value: string): string {
               :data-label="column.label"
             >
               <template v-if="column.values(definition).length > 0">
-                <MathFormula
+                <span
                   v-for="(value, index) in column.values(definition)"
                   :key="`${definition.id}-${column.key}-${index}`"
-                  class="property-value"
-                  :formula="toFormula(value)"
-                  :label="`${definition.name}${column.label}${index + 1}`"
-                />
+                  class="property-value-scroll"
+                  data-property-value-scroll
+                  :style="propertyValueScrollStyle"
+                >
+                  <MathFormula
+                    class="property-value"
+                    :formula="toFormula(value)"
+                    :label="`${definition.name}${column.label}${index + 1}：${value}`"
+                  />
+                </span>
               </template>
               <span v-else class="property-empty">无</span>
             </td>
@@ -196,7 +210,7 @@ tbody th strong,
   display: block;
 }
 
-.property-value + .property-value {
+.property-value-scroll + .property-value-scroll {
   margin-top: 5px;
 }
 
