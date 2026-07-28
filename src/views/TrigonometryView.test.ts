@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { functionCatalog } from '../features/trigonometry/catalog'
 import TrigonometryView from './TrigonometryView.vue'
@@ -59,12 +60,35 @@ function mountPage() {
   })
 }
 
+async function mountPageWithRouter() {
+  const router = createRouter({
+    history: createWebHashHistory('/my-tools/'),
+    routes: [
+      { path: '/', component: { template: '<div />' } },
+      { path: '/tool/trigonometry', component: TrigonometryView },
+    ],
+  })
+  await router.push('/tool/trigonometry')
+  await router.isReady()
+
+  return {
+    router,
+    wrapper: mount(TrigonometryView, {
+      attachTo: document.body,
+      global: {
+        plugins: [router],
+      },
+    }),
+  }
+}
+
 beforeEach(() => {
   installStorageHarness()
   document.documentElement.removeAttribute('data-theme')
 })
 
 afterEach(() => {
+  document.body.innerHTML = ''
   vi.unstubAllGlobals()
 })
 
@@ -84,12 +108,38 @@ describe('TrigonometryView', () => {
 
     expect(wrapper.find('main').attributes('data-theme')).toBe('light')
     expect(wrapper.findAll('main > section').map(section => section.attributes('id'))).toEqual(orderedIds)
-    expect(wrapper.findAll('[data-page-anchor]').map(link => link.attributes('href'))).toEqual(
-      orderedIds.map(id => `#${id}`),
-    )
+    expect(wrapper.findAll('[data-page-anchor]').map(link => link.text())).toEqual([
+      '交互图像',
+      '三角函数',
+      '反三角函数',
+      '反函数关系',
+      '易错点',
+      '补充内容',
+      '符号说明',
+    ])
     expect(wrapper.text()).toContain('默认采用弧度制')
     expect(wrapper.text()).toContain('k ∈ Z')
     expect(wrapper.text()).toContain('arccot 主值范围采用 (0, π)')
+  })
+
+  test('页内目录链接保留三角函数手册路由并附加目标片段', async () => {
+    installBrowserHarness()
+    const { wrapper } = await mountPageWithRouter()
+
+    expect(wrapper.get('[data-page-anchor]').attributes('href')).toContain(
+      '#/tool/trigonometry#workbench',
+    )
+  })
+
+  test('点击页内目录时滚动到对应分区', async () => {
+    installBrowserHarness()
+    const { wrapper } = await mountPageWithRouter()
+    const scrollIntoView = vi.fn()
+    wrapper.get('#workbench').element.scrollIntoView = scrollIntoView
+
+    await wrapper.get('[data-page-anchor]').trigger('click')
+
+    expect(scrollIntoView).toHaveBeenCalledOnce()
   })
 
   test('完整性质分区从 catalog 呈现十个主要函数且补充区只含 arcsec 和 arccsc', () => {

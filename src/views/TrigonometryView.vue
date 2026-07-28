@@ -22,6 +22,11 @@ const pageAnchors = [
   { id: 'supplement', label: '补充内容' },
   { id: 'symbols', label: '符号说明' },
 ] as const
+
+function scrollToPageAnchor(id: string) {
+  document.getElementById(id)?.scrollIntoView({ block: 'start' })
+}
+
 </script>
 
 <template>
@@ -62,14 +67,15 @@ const pageAnchors = [
     </header>
 
     <nav class="page-anchors" aria-label="本页目录">
-      <a
+      <RouterLink
         v-for="anchor in pageAnchors"
         :key="anchor.id"
         data-page-anchor
-        :href="`#${anchor.id}`"
+        :to="{ hash: `#${anchor.id}` }"
+        @click="scrollToPageAnchor(anchor.id)"
       >
         {{ anchor.label }}
-      </a>
+      </RouterLink>
     </nav>
 
     <section id="workbench" class="page-section page-section--workbench" aria-labelledby="workbench-title">
