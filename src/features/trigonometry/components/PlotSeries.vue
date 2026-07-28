@@ -49,13 +49,17 @@ const seriesLabel = computed(() => {
   <g
     :data-series="definition.id"
     class="plot-series"
+    :style="{
+      '--series-light-color': definition.style.color,
+      '--series-dark-color': definition.style.darkColor,
+    }"
   >
     <path
       v-for="(branch, index) in renderedBranches"
       :key="branch.id"
       :d="branch.path"
       fill="none"
-      :stroke="definition.style.color"
+      stroke="var(--series-color)"
       :stroke-dasharray="dashPatterns[definition.style.pattern]"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -69,13 +73,17 @@ const seriesLabel = computed(() => {
       data-series-label
       :x="seriesLabel.x"
       :y="seriesLabel.y"
-      :fill="definition.style.color"
+      fill="var(--series-color)"
       text-anchor="end"
     >{{ definition.name }}</text>
   </g>
 </template>
 
 <style scoped>
+.plot-series {
+  --series-color: var(--series-light-color);
+}
+
 .plot-series path {
   transition: opacity 120ms ease;
 }

@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useId } from 'vue'
 import type { FunctionDefinition } from '../types'
 import MathFormula from './MathFormula.vue'
 
 defineProps<{
   definitions: FunctionDefinition[]
 }>()
+
+const titleId = `property-panel-${useId()}-title`
 
 interface PropertyColumn {
   key: string
@@ -91,8 +94,8 @@ function toFormula(value: string): string {
 </script>
 
 <template>
-  <section class="property-panel" aria-labelledby="property-panel-title">
-    <h2 id="property-panel-title">函数性质</h2>
+  <section class="property-panel" :aria-labelledby="titleId">
+    <h2 :id="titleId">函数性质</h2>
     <div class="property-table-scroll">
       <table class="property-table" aria-label="所选函数性质比较">
         <thead>

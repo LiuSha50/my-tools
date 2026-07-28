@@ -5,6 +5,18 @@ import FunctionPlot from './FunctionPlot.vue'
 import TrigonometryWorkbench from './TrigonometryWorkbench.vue'
 
 describe('TrigonometryWorkbench', () => {
+  test('桌面工作台把主图和当前性质组成选择器右侧内容列', () => {
+    const wrapper = mount(TrigonometryWorkbench)
+    const content = wrapper.get('[data-workbench-content]')
+
+    expect(wrapper.get('.workbench-main').element.children[0]).toBe(
+      wrapper.get('[data-function-selector]').element,
+    )
+    expect(wrapper.get('.workbench-main').element.children[1]).toBe(content.element)
+    expect(content.element.children[0]).toBe(wrapper.get('.workbench-visualization').element)
+    expect(content.findComponent({ name: 'PropertyPanel' }).exists()).toBe(true)
+  })
+
   test('默认选中 sin 并显示完整性质', () => {
     const wrapper = mount(TrigonometryWorkbench)
 

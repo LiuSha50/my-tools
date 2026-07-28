@@ -52,24 +52,26 @@ function toggleSelectedFunction(id: MainFunctionId) {
         @change-category="changeCategory"
       />
 
-      <div class="workbench-visualization">
-        <FunctionPlot
-          v-if="selectedIds.length > 0"
-          :function-ids="selectedIds"
-          :category="activeCategory"
-          :marker-visibility="markerVisibility"
+      <div class="workbench-content" data-workbench-content>
+        <div class="workbench-visualization">
+          <FunctionPlot
+            v-if="selectedIds.length > 0"
+            :function-ids="selectedIds"
+            :category="activeCategory"
+            :marker-visibility="markerVisibility"
+          />
+          <section v-else class="empty-state" aria-live="polite">
+            <h2>尚未选择函数</h2>
+            <p>请在函数列表中选择要查看或比较的函数。</p>
+          </section>
+        </div>
+
+        <PropertyPanel
+          v-if="selectedDefinitions.length > 0"
+          :definitions="selectedDefinitions"
         />
-        <section v-else class="empty-state" aria-live="polite">
-          <h2>尚未选择函数</h2>
-          <p>请在函数列表中选择要查看或比较的函数。</p>
-        </section>
       </div>
     </div>
-
-    <PropertyPanel
-      v-if="selectedDefinitions.length > 0"
-      :definitions="selectedDefinitions"
-    />
   </section>
 </template>
 
@@ -87,11 +89,16 @@ function toggleSelectedFunction(id: MainFunctionId) {
   gap: 20px;
   align-items: start;
   min-width: 0;
-  margin-bottom: 28px;
 }
 
+.workbench-content,
 .workbench-visualization {
   min-width: 0;
+}
+
+.workbench-content {
+  display: grid;
+  gap: 28px;
 }
 
 .empty-state {

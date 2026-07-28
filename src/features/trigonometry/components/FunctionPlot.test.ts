@@ -111,6 +111,23 @@ describe('FunctionPlot', () => {
     expect(wrapper.get('[data-series-label]').text()).toContain('余弦函数')
   })
 
+  test('函数曲线同时暴露目录中的浅色与深色配色供页面主题解析', async () => {
+    const wrapper = mount(FunctionPlot, {
+      props: {
+        functionIds: ['sin'],
+        category: 'trig',
+        markerVisibility,
+      },
+    })
+    await wrapper.vm.$nextTick()
+    const series = wrapper.get('[data-series="sin"]')
+
+    expect(series.attributes('style')).toContain('--series-light-color: #2563eb')
+    expect(series.attributes('style')).toContain('--series-dark-color: #60a5fa')
+    expect(series.get('path').attributes('stroke')).toBe('var(--series-color)')
+    expect(series.get('[data-series-label]').attributes('fill')).toBe('var(--series-color)')
+  })
+
   test('零尺寸 ResizeObserver 通知不生成路径', async () => {
     let resizeCallback: ResizeObserverCallback | undefined
     const disconnect = vi.fn()
