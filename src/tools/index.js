@@ -8,12 +8,14 @@ import urlTool from './encoding/url'
 import unicode from './encoding/unicode'
 import caseConverter from './text/case'
 import timestamp from './text/timestamp'
+import trigonometry from './math/trigonometry'
 
 export const tools = [
   aes, des, rsa,
   md5, sha,
   base64, urlTool, unicode,
-  caseConverter, timestamp
+  caseConverter, timestamp,
+  trigonometry
 ]
 
 export const toolsByCategory = {
@@ -21,6 +23,7 @@ export const toolsByCategory = {
   get hash() { return tools.filter(t => t.category === 'hash') },
   get encoding() { return tools.filter(t => t.category === 'encoding') },
   get text() { return tools.filter(t => t.category === 'text') },
+  get math() { return tools.filter(t => t.category === 'math') },
 }
 
 export const categoryNames = {
@@ -28,9 +31,10 @@ export const categoryNames = {
   hash: '哈希',
   encoding: '编码',
   text: '文本',
+  math: '数学',
 }
 
-export const categoryOrder = ['crypto', 'hash', 'encoding', 'text']
+export const categoryOrder = ['crypto', 'hash', 'encoding', 'text', 'math']
 
 export function getToolById(id) {
   return tools.find(t => t.id === id)

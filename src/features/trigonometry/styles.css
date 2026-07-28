@@ -1,0 +1,612 @@
+.trigonometry-page {
+  --color-bg: #f4f7fa;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f1f5f8;
+  --color-border: #cfd8e3;
+  --color-text: #17212b;
+  --color-text-secondary: #526171;
+  --color-text-muted: #627183;
+  --color-primary: #165d89;
+  --color-primary-soft: #e5f1f7;
+  --color-danger: #a23831;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  color: var(--color-text);
+  color-scheme: light;
+  overflow-x: clip;
+}
+
+.trigonometry-page[data-theme="dark"] {
+  --color-bg: #0d151d;
+  --color-surface: #14212b;
+  --color-surface-soft: #192935;
+  --color-border: #344858;
+  --color-text: #edf4f8;
+  --color-text-secondary: #b3c1cc;
+  --color-text-muted: #9caeba;
+  --color-primary: #71b9df;
+  --color-primary-soft: #18384a;
+  --color-danger: #ffaaa2;
+  color-scheme: dark;
+}
+
+.trigonometry-page__background {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  background: var(--color-bg);
+  pointer-events: none;
+}
+
+.trigonometry-page *,
+.trigonometry-page *::before,
+.trigonometry-page *::after {
+  box-sizing: border-box;
+}
+
+.trigonometry-page a {
+  color: var(--color-primary);
+}
+
+.page-header {
+  padding: clamp(12px, 2.5vw, 28px) 0 clamp(24px, 5vw, 48px);
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: clamp(22px, 4vw, 40px);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.eyebrow,
+.section-number {
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title-row h1 {
+  max-width: 18ch;
+  margin: 5px 0 12px;
+  font-family: Georgia, "Times New Roman", "Noto Serif SC", serif;
+  font-size: clamp(2rem, 6vw, 4rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.page-intro {
+  max-width: 46rem;
+  color: var(--color-text-secondary);
+  font-size: clamp(1rem, 2vw, 1.12rem);
+}
+
+.theme-toggle {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.convention-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.convention-banner > * {
+  padding: 7px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.88rem;
+}
+
+.convention-banner .arccot-convention {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.page-anchors {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  gap: 4px;
+  max-width: 100%;
+  padding: 8px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--color-text) 7%, transparent);
+  scrollbar-width: thin;
+  backdrop-filter: blur(10px);
+}
+
+.page-anchors a {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.page-anchors a:hover {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.page-section {
+  min-width: 0;
+  padding: clamp(38px, 7vw, 72px) 0;
+  scroll-margin-top: 72px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.page-section:last-child {
+  border-bottom: 0;
+}
+
+.section-heading {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: clamp(20px, 4vw, 34px);
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", "Noto Serif SC", serif;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+  line-height: 1.2;
+}
+
+.section-heading p:not(.section-number) {
+  max-width: 52rem;
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+}
+
+.section-heading .important-convention {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.trigonometry-page .workbench-main {
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: clamp(16px, 3vw, 28px);
+}
+
+.trigonometry-page .trigonometry-workbench,
+.trigonometry-page .inverse-relation-panel,
+.trigonometry-page .supplement-card,
+.trigonometry-page .symbol-legend > section,
+.trigonometry-page .symbol-grid > section {
+  box-shadow: none;
+}
+
+.mistake-list ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+  counter-reset: mistakes;
+}
+
+.mistake-list li {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  counter-increment: mistakes;
+}
+
+.mistake-list li > p:first-child::before {
+  content: counter(mistakes, decimal-leading-zero) ". ";
+  color: var(--color-primary);
+  font-family: var(--font-mono, monospace);
+  font-weight: 800;
+}
+
+.mistake-list p {
+  margin: 0;
+}
+
+.mistake-list .math-formula {
+  display: block;
+  margin-top: 10px;
+}
+
+.mistake-list details {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.mistake-list summary {
+  color: var(--color-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mistake-list details p {
+  margin-top: 10px;
+  color: var(--color-text-secondary);
+}
+
+.convention-warning {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--color-primary);
+  background: var(--color-primary-soft);
+  line-height: 1.7;
+}
+
+.supplement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.supplement-card {
+  min-width: 0;
+  padding: clamp(16px, 3vw, 24px);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.supplement-card h3 {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+}
+
+.supplement-card > .math-formula {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.supplement-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.supplement-card dl > div {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 36%) minmax(0, 1fr);
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.supplement-card dt {
+  color: var(--color-text-secondary);
+  font-weight: 650;
+}
+
+.supplement-card dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.convention-note {
+  margin: 14px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.symbol-grid > section,
+.line-legend {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.symbol-legend h3 {
+  margin: 0 0 12px;
+}
+
+.symbol-legend dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.symbol-legend dl > div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 10px;
+}
+
+.symbol-legend dt {
+  font-family: var(--font-mono, monospace);
+  font-weight: 750;
+}
+
+.symbol-legend dd {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.symbol-legend ul {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.symbol-legend li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.asymptote-sample,
+.line-sample {
+  display: inline-block;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 3px;
+  border-top: 2px dashed var(--color-text-muted);
+}
+
+.asymptote-sample--vertical {
+  flex-basis: 20px;
+  width: 20px;
+  height: 26px;
+  border-top: 0;
+  border-left: 2px dashed var(--color-text-muted);
+}
+
+.point-sample {
+  flex: 0 0 12px;
+  width: 12px;
+  height: 12px;
+  border: 3px solid var(--color-primary);
+  border-radius: 50%;
+  background: var(--color-surface);
+}
+
+.line-legend {
+  margin-top: 14px;
+}
+
+.line-legend p,
+.interaction-note {
+  color: var(--color-text-secondary);
+}
+
+.line-legend ul {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.line-sample {
+  border-top-style: solid;
+  border-color: var(--color-primary);
+}
+
+.line-sample[data-pattern="dashed"] {
+  border-top-style: dashed;
+}
+
+.line-sample[data-pattern="dotted"] {
+  border-top-style: dotted;
+}
+
+.line-sample[data-pattern="dash-dot"] {
+  border: 0;
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-primary) 0 12px,
+    transparent 12px 16px,
+    var(--color-primary) 16px 19px,
+    transparent 19px 24px
+  );
+}
+
+.interaction-note {
+  margin: 16px 0 0;
+}
+
+.trigonometry-page .math-formula {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.trigonometry-page .math-formula--display,
+.trigonometry-page .katex-display {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+}
+
+.trigonometry-page :where(a, button, input, select, summary):focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.trigonometry-page[data-theme="dark"] [data-series] {
+  --series-color: var(--series-dark-color);
+  stroke: var(--series-dark-color);
+}
+
+.trigonometry-page[data-theme="dark"] [data-series-endpoint] {
+  fill: var(--series-dark-color);
+  stroke: var(--series-dark-color);
+}
+
+.trigonometry-page[data-theme="dark"] [data-plot-marker] {
+  --marker-color: var(--marker-dark-color);
+}
+
+.trigonometry-page[data-theme="light"] [data-series] {
+  --series-color: var(--series-light-color);
+  stroke: var(--series-light-color);
+}
+
+.trigonometry-page[data-theme="light"] [data-series-endpoint] {
+  fill: var(--series-light-color);
+  stroke: var(--series-light-color);
+}
+
+.trigonometry-page[data-theme="light"] [data-plot-marker] {
+  --marker-color: var(--marker-light-color);
+}
+
+@media (max-width: 900px) {
+  .trigonometry-page .workbench-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .trigonometry-page {
+    overflow-x: clip;
+  }
+
+  .title-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .theme-toggle {
+    justify-self: start;
+  }
+
+  .page-anchors {
+    margin-inline: -8px;
+    border-radius: 0;
+  }
+
+  .section-heading {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .trigonometry-page .function-selector {
+    display: grid;
+    gap: 10px;
+  }
+
+  .trigonometry-page .function-options,
+  .trigonometry-page .marker-options {
+    min-width: 0;
+    padding: 10px 0;
+    overflow: hidden;
+    border-width: 1px 0 0;
+    border-radius: 0;
+  }
+
+  .trigonometry-page .function-option-list,
+  .trigonometry-page .marker-option-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    max-width: 100%;
+    padding: 3px 2px 10px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+
+  .trigonometry-page .function-option {
+    flex: 0 0 auto;
+    grid-template-columns: auto 32px auto;
+    padding: 8px 10px;
+    border-color: var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface);
+  }
+
+  .trigonometry-page .function-option__content {
+    flex-wrap: nowrap;
+  }
+
+  .trigonometry-page .function-option__content .math-formula {
+    display: none;
+  }
+
+  .trigonometry-page .marker-option-list button {
+    flex: 0 0 auto;
+    border-radius: 999px;
+  }
+
+  .trigonometry-page .plot-stage {
+    height: clamp(300px, 84vw, 420px);
+    min-height: 300px;
+  }
+
+  .mistake-list ol,
+  .supplement-grid,
+  .symbol-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .line-legend ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .supplement-card dl > div,
+  .symbol-legend dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .mistake-list li,
+  .supplement-card,
+  .symbol-grid > section,
+  .line-legend {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigonometry-page,
+  .trigonometry-page *,
+  .trigonometry-page *::before,
+  .trigonometry-page *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
