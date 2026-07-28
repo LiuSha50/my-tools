@@ -6,10 +6,9 @@ import { renderFormula } from '../mathRendering'
 const props = withDefaults(defineProps<{
   formula: string
   display?: boolean
-  label?: string
+  label: string
 }>(), {
   display: false,
-  label: '',
 })
 
 const rendered = computed(() => renderFormula(props.formula, props.display))
@@ -19,6 +18,7 @@ const rendered = computed(() => renderFormula(props.formula, props.display))
   <span
     class="math-formula"
     :class="{ 'math-formula--display': display }"
+    role="math"
     :aria-label="label"
   >
     <span v-if="rendered.html !== null" v-html="rendered.html" />

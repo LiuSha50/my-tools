@@ -11,7 +11,16 @@ describe('MathFormula', () => {
     })
 
     expect(wrapper.find('.katex').exists()).toBe(true)
+    expect(wrapper.attributes('role')).toBe('math')
     expect(wrapper.attributes('aria-label')).toBe('正弦 x')
+  })
+
+  test('将 label 作为必填的数学公式可访问名称', () => {
+    const component = MathFormula as unknown as {
+      props: { label: { required: boolean } }
+    }
+
+    expect(component.props.label.required).toBe(true)
   })
 
   test('渲染器抛错时返回原始文本降级结果', () => {
