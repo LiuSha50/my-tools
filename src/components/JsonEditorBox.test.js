@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { nextTick } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { foldCode } from '@codemirror/language'
 import { describe, expect, test, vi } from 'vitest'
 import JsonEditorBox from './JsonEditorBox.vue'
@@ -68,5 +68,98 @@ describe('JsonEditorBox', () => {
 
     wrapper.unmount()
     expect(destroy).toHaveBeenCalledOnce()
+  })
+
+  test('Clipboard API 拒绝后 fallback 成功才显示已复制并清理节点', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+    })
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn().mockReturnValue(true),
+    })
+    const wrapper = mount(JsonEditorBox, {
+      props: { modelValue: '{"fallback":true}' },
+    })
+
+    await wrapper.get('[data-test="copy-json-result"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="copy-json-result"]').text()).toBe('已复制')
+    expect(document.body.querySelector('textarea')).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('fallback 返回 false 时不误报成功并清理节点', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+    })
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn().mockReturnValue(false),
+    })
+    const wrapper = mount(JsonEditorBox, {
+      props: { modelValue: '{"fallback":false}' },
+    })
+
+    await wrapper.get('[data-test="copy-json-result"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="copy-json-result"]').text()).toBe('复制')
+    expect(document.body.querySelector('textarea')).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('fallback 抛错时不误报成功并清理节点', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+    })
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      value: vi.fn(() => { throw new Error('copy failed') }),
+    })
+    const wrapper = mount(JsonEditorBox, {
+      props: { modelValue: '{"fallback":"throws"}' },
+      global: { config: { errorHandler: vi.fn() } },
+    })
+
+    await wrapper.get('[data-test="copy-json-result"]').trigger('click')
+    await flushPromises()
+
+    expect(document.body.querySelector('textarea')).toBeNull()
+    expect(wrapper.get('[data-test="copy-json-result"]').text()).toBe('复制')
+    wrapper.unmount()
+  })
+
+  test('重复复制与卸载会清理成功提示定时器', async () => {
+    vi.useFakeTimers()
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+    })
+    const wrapper = mount(JsonEditorBox, {
+      props: { modelValue: '{"timer":true}' },
+    })
+    const initialTimerCount = vi.getTimerCount()
+
+    try {
+      await wrapper.get('[data-test="copy-json-result"]').trigger('click')
+      await flushPromises()
+      expect(vi.getTimerCount()).toBe(initialTimerCount + 1)
+
+      await wrapper.get('[data-test="copy-json-result"]').trigger('click')
+      await flushPromises()
+      expect(vi.getTimerCount()).toBe(initialTimerCount + 1)
+
+      wrapper.unmount()
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      if (wrapper.exists()) wrapper.unmount()
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
   })
 })

@@ -40,6 +40,7 @@ const editorHost = ref(null)
 const copied = ref(false)
 let editorView = null
 let applyingExternalValue = false
+let copiedResetTimer = null
 
 function getEditorView() {
   return editorView
@@ -57,20 +58,40 @@ function replaceDocument(value) {
 async function copyResult() {
   if (!props.modelValue) return
 
+  clearCopiedResetTimer()
+  copied.value = false
+  let copySucceeded = false
+
   try {
     await navigator.clipboard.writeText(props.modelValue)
-    copied.value = true
+    copySucceeded = true
   } catch {
     const textarea = document.createElement('textarea')
     textarea.value = props.modelValue
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-    copied.value = true
+    try {
+      document.body.appendChild(textarea)
+      textarea.select()
+      copySucceeded = document.execCommand('copy') === true
+    } catch {
+      copySucceeded = false
+    } finally {
+      textarea.remove()
+    }
   }
 
-  window.setTimeout(() => { copied.value = false }, 1500)
+  if (!copySucceeded) return
+
+  copied.value = true
+  copiedResetTimer = window.setTimeout(() => {
+    copied.value = false
+    copiedResetTimer = null
+  }, 1500)
+}
+
+function clearCopiedResetTimer() {
+  if (copiedResetTimer === null) return
+  window.clearTimeout(copiedResetTimer)
+  copiedResetTimer = null
 }
 
 onMounted(() => {
@@ -101,6 +122,7 @@ onMounted(() => {
 watch(() => props.modelValue, replaceDocument)
 
 onBeforeUnmount(() => {
+  clearCopiedResetTimer()
   editorView?.destroy()
   editorView = null
 })
