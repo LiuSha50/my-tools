@@ -383,6 +383,11 @@ async function execute(mode) {
   }
 
   .layout-json-editor :deep(.input-box-textarea),
+  .layout-json-editor :deep(.json-editor-box-host) {
+    height: 420px;
+    min-height: 420px;
+  }
+
   .layout-json-editor :deep(.cm-editor) {
     height: 420px;
   }
