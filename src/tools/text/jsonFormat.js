@@ -6,7 +6,9 @@ export default {
   category: 'text',
   icon: '{}',
   description: 'JSON 格式化、压缩与校验',
-  layout: 'vertical',
+  layout: 'horizontal',
+  resultView: 'json-editor',
+  resultLabel: '格式化结果',
   options: [
     { key: 'indent', label: '缩进', type: 'select', values: ['2空格', '4空格', 'Tab'], default: '2空格' },
     { key: 'json5', label: 'JSON5 模式', type: 'switch', default: true }

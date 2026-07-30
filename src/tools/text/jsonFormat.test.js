@@ -4,6 +4,14 @@ const { execute } = jsonFormat
 const defaults = { indent: '2空格', json5: true }
 
 describe('JSON 格式化', () => {
+  test('声明横向 JSON 编辑器结果区', () => {
+    expect(jsonFormat).toMatchObject({
+      layout: 'horizontal',
+      resultView: 'json-editor',
+      resultLabel: '格式化结果',
+    })
+  })
+
   test('格式化标准 JSON', () => {
     const result = execute('{"a":1,"b":2}', defaults, 'format')
     expect(result.result).toBe('{\n  "a": 1,\n  "b": 2\n}')

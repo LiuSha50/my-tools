@@ -72,9 +72,28 @@
     <div v-if="error" class="error-msg">{{ error }}</div>
 
     <!-- Layout: vertical or horizontal -->
-    <div :class="['tool-layout', `layout-${tool.layout}`]">
-      <InputBox v-model="inputText" :rows="tool.layout === 'horizontal' ? 12 : 6" />
-      <OutputBox v-model="outputText" :rows="tool.layout === 'horizontal' ? 12 : 6" />
+    <div
+      :class="[
+        'tool-layout',
+        `layout-${tool.layout}`,
+        { 'layout-json-editor': tool.resultView === 'json-editor' },
+      ]"
+    >
+      <InputBox
+        v-model="inputText"
+        :class="{ 'json-input-pane': tool.resultView === 'json-editor' }"
+        :rows="tool.layout === 'horizontal' ? 12 : 6"
+      />
+      <JsonEditorBox
+        v-if="tool.resultView === 'json-editor'"
+        v-model="outputText"
+        :label="tool.resultLabel"
+      />
+      <OutputBox
+        v-else
+        v-model="outputText"
+        :rows="tool.layout === 'horizontal' ? 12 : 6"
+      />
     </div>
   </div>
 
@@ -88,6 +107,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import InputBox from '../components/InputBox.vue'
+import JsonEditorBox from '../components/JsonEditorBox.vue'
 import OutputBox from '../components/OutputBox.vue'
 import { getToolById } from '../tools/index.js'
 
@@ -321,7 +341,21 @@ async function execute(mode) {
 }
 
 .layout-horizontal > * {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.layout-json-editor > .json-input-pane {
+  flex: 44 1 0;
+}
+
+.layout-json-editor > .json-editor-box {
+  flex: 56 1 0;
+}
+
+.layout-json-editor :deep(.input-box-textarea) {
+  height: clamp(420px, 60vh, 720px);
+  resize: none;
 }
 
 .layout-vertical {
@@ -341,6 +375,16 @@ async function execute(mode) {
 @media (max-width: 640px) {
   .layout-horizontal {
     flex-direction: column;
+  }
+
+  .layout-json-editor > .json-input-pane,
+  .layout-json-editor > .json-editor-box {
+    flex: 1 1 auto;
+  }
+
+  .layout-json-editor :deep(.input-box-textarea),
+  .layout-json-editor :deep(.cm-editor) {
+    height: 420px;
   }
 }
 </style>
